@@ -1,4 +1,4 @@
-<!-- Haul v3.0.0 -->
+<!-- Haul v3.3.0 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -315,7 +315,7 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.0.0</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.3.0</span></div>
     <button id="btn-install">Install App</button>
   </header>
   <div id="ios-banner">To install Haul on your home screen: tap the Share button in Safari, then choose "Add to Home Screen".</div>
@@ -399,8 +399,8 @@
         Save as route
       </button>
       <button id="btn-push-driver" class="btn-action" style="background:var(--green);color:#fff;">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        Push to driver
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        Share route
       </button>
     </div>
     <button id="btn-reset" class="btn-action">Clear and start over</button>
@@ -445,7 +445,7 @@
 
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.0.0';
+const APP_VERSION = 'v3.3.0';
 
 // ── PWA MANIFEST ──
 (function() {
@@ -834,15 +834,123 @@ function updateMapsButton(run) {
 // ── PUSH TO DRIVER ──
 document.getElementById('btn-push-driver').addEventListener('click', () => {
   if (!currentResult) return;
-  // Store the current result for driver view
-  try { localStorage.setItem('haul_driver_route', JSON.stringify({ ...currentResult, pushedAt: new Date().toISOString(), unit: useKm ? 'km' : 'mi' })); } catch {}
-  // Switch to driver mode and show route
-  setMode(false);
-  renderDriverView(currentResult);
-  showModal('Route pushed', '<p style="color:var(--muted);font-size:14px;">The driver view has been updated. Hand the device to your driver.</p>', [
-    { label:'Done', fn:closeModal, style:'background:var(--accent);color:#0f0f1a;border:none;' }
-  ]);
+  const vanCount = currentResult.runs.length;
+  if (vanCount === 1) {
+    showShareModal(0);
+  } else {
+    const options = currentResult.runs.map((run, i) =>
+      `<button class="btn-primary" style="margin-bottom:8px;background:var(--surface);border:1px solid var(--border);color:var(--text);text-align:left;padding:12px 16px;" data-van="${i}">
+        <strong>Van ${i+1}</strong>
+        <span style="color:var(--muted);font-size:13px;margin-left:8px;">${run.stops.length} stop${run.stops.length!==1?'s':''} · ${fmtDist(run.stops.reduce((a,s)=>a+s.leg.distKm,0)+(run.returnLeg?run.returnLeg.distKm:0))}</span>
+      </button>`
+    ).join('');
+    showModal(
+      'Share which van?',
+      `<p style="color:var(--muted);font-size:13px;margin-bottom:14px;">Pick the route to generate a share link for.</p>${options}`,
+      [{ label:'Cancel', fn:closeModal, style:'background:var(--surface);border:1px solid var(--border);color:var(--text);' }]
+    );
+    document.querySelectorAll('#modal-body [data-van]').forEach(btn => {
+      btn.addEventListener('click', () => { closeModal(); showShareModal(parseInt(btn.dataset.van)); });
+    });
+  }
 });
+
+function buildPayload(vanIdx) {
+  const run = currentResult.runs[vanIdx];
+  return {
+    runs: [run],
+    startPc: currentResult.startPc,
+    departTime: currentResult.departTime,
+    returnToWh: currentResult.returnToWh,
+    vanCount: 1,
+    vanLabel: currentResult.runs.length > 1 ? `Van ${vanIdx + 1}` : null,
+    usingFallback: currentResult.usingFallback,
+    unit: useKm ? 'km' : 'mi'
+  };
+}
+
+function encodeRoute(payload) {
+  try {
+    const json = JSON.stringify(payload);
+    // btoa needs ASCII — encode via encodeURIComponent first
+    return btoa(encodeURIComponent(json).replace(/%([0-9A-F]{2})/g, (_, p1) => String.fromCharCode('0x' + p1)));
+  } catch { return null; }
+}
+
+function decodeRoute(encoded) {
+  try {
+    const decoded = decodeURIComponent(Array.from(atob(encoded), c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+    return JSON.parse(decoded);
+  } catch { return null; }
+}
+
+function buildShareLink(vanIdx) {
+  const payload = buildPayload(vanIdx);
+  const encoded = encodeRoute(payload);
+  if (!encoded) return null;
+  const base = window.location.href.split('?')[0].split('#')[0];
+  return `${base}?r=${encoded}`;
+}
+
+async function showShareModal(vanIdx) {
+  const longLink = buildShareLink(vanIdx);
+  const label = currentResult.runs.length > 1 ? `Van ${vanIdx + 1}` : 'Driver';
+  if (!longLink) {
+    showModal('Error', '<p style="color:var(--danger);">Could not generate link.</p>', [{label:'Close',fn:closeModal,style:'background:var(--surface);border:1px solid var(--border);color:var(--text);'}]);
+    return;
+  }
+
+  // Show modal with loading state first
+  showModal(
+    `Share route – ${label}`,
+    `<p style="color:var(--muted);font-size:13px;margin-bottom:16px;">Send this link to the driver. They tap it on their phone and Haul opens with their route loaded.</p>
+    <div id="share-link-box" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-size:13px;word-break:break-all;color:var(--muted);margin-bottom:12px;min-height:42px;display:flex;align-items:center;">
+      <span id="share-link-text" style="flex:1;">Shortening link…</span>
+    </div>
+    <button id="btn-copy-link" class="btn-primary" style="margin-top:0;" disabled>Copy link</button>`,
+    [{ label:'Close', fn:closeModal, style:'background:var(--surface);border:1px solid var(--border);color:var(--text);margin-top:8px;' }]
+  );
+
+  // Try to shorten via TinyURL
+  let finalLink = longLink;
+  try {
+    const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longLink)}`);
+    if (res.ok) {
+      const short = await res.text();
+      if (short.startsWith('https://tinyurl.com/')) finalLink = short.trim();
+    }
+  } catch { /* fall back to long link silently */ }
+
+  const linkTextEl = document.getElementById('share-link-text');
+  const copyBtn = document.getElementById('btn-copy-link');
+  if (linkTextEl) linkTextEl.textContent = finalLink;
+  if (copyBtn) {
+    copyBtn.disabled = false;
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(finalLink).then(() => {
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => { copyBtn.textContent = 'Copy link'; }, 2000);
+      });
+    });
+  }
+}
+
+// ── CHECK FOR ROUTE IN URL ON LOAD ──
+(function() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const r = params.get('r');
+    if (!r) return;
+    const payload = decodeRoute(r);
+    if (!payload || !payload.runs) return;
+    // Save to localStorage so it persists after URL is closed
+    localStorage.setItem('haul_driver_route', JSON.stringify({ ...payload, pushedAt: new Date().toISOString() }));
+    // Strip the param from the URL cleanly
+    const clean = window.location.href.split('?')[0];
+    window.history.replaceState({}, '', clean);
+    // Will be rendered by renderDriverView(null) call below
+  } catch {}
+})();
 
 // ── DRIVER VIEW RENDER ──
 function renderDriverView(result) {
@@ -858,14 +966,15 @@ function renderDriverView(result) {
   document.getElementById('driver-no-route').style.display='none';
   document.getElementById('driver-route').style.display='block';
 
-  const run = result.runs[0]; // driver always sees van 1; multi-van: each driver gets their own device
-  const { startPc, departTime, returnToWh } = result;
+  const run = result.runs[0];
+  const { startPc, departTime, returnToWh, vanLabel } = result;
 
   // Summary
   const totalDist = run.stops.reduce((a,s)=>a+s.leg.distKm,0) + (run.returnLeg?run.returnLeg.distKm:0);
   const totalDrive = run.stops.reduce((a,s)=>a+s.leg.durMins,0) + (run.returnLeg?run.returnLeg.durMins:0);
   const totalTime = totalDrive + run.stops.length * STOP_DWELL;
   document.getElementById('driver-summary').innerHTML = `
+    ${vanLabel?`<div class="summary-pill" style="border-color:var(--accent);"><span>${vanLabel}</span></div>`:''}
     <div class="summary-pill"><span>${fmtDist(totalDist)}</span> total</div>
     <div class="summary-pill"><span>${run.stops.length}</span> stops</div>
     <div class="summary-pill"><span>${fmtMins(totalTime)}</span> est. total</div>
