@@ -1,4 +1,4 @@
-<!-- Haul v3.4.5 -->
+<!-- Haul v3.5.1 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,6 +11,7 @@
   <meta name="apple-mobile-web-app-title" content="Haul">
   <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%231a1a2e'/%3E%3Ctext x='256' y='340' text-anchor='middle' font-family='system-ui' font-weight='900' font-size='300' fill='%23f0c040'%3EH%3C/text%3E%3C/svg%3E">
   <title>Haul</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -357,7 +358,46 @@
     .empty-state .empty-icon { font-size: 36px; margin-bottom: 12px; }
     .empty-state p { font-size: 14px; line-height: 1.6; }
 
-    /* ── MODAL ── */
+    /* ── MAP PANEL ── */
+    #map-panel {
+      display: none;
+      height: 300px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+    }
+    #map-panel.visible { display: block; }
+    #btn-toggle-map {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    #btn-toggle-map:hover, #btn-toggle-map.active { border-color: var(--accent); color: var(--accent); }
+
+    /* ── DRAGGABLE STOP LIST ── */
+    #stop-list li[draggable="true"] { cursor: grab; }
+    #stop-list li[draggable="true"]:active { cursor: grabbing; }
+    #stop-list li.dragging { opacity: 0.4; }
+    #stop-list li.drag-over-top { border-top: 2px solid var(--accent); }
+    #stop-list li.drag-over-bottom { border-bottom: 2px solid var(--accent); }
+    .drag-handle {
+      color: var(--border);
+      font-size: 16px;
+      flex-shrink: 0;
+      cursor: grab;
+      padding: 0 4px;
+      align-self: center;
+    }
     #modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
     #modal-overlay.active { display: flex; }
     #modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; width: 100%; max-width: 420px; }
@@ -433,7 +473,7 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.4.5</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.5.1</span></div>
     <button id="btn-install">Install App</button>
   </header>
   <div id="ios-banner">To install Haul on your home screen: tap the Share button in Safari, then choose "Add to Home Screen".</div>
@@ -494,8 +534,15 @@
   <div id="status"></div>
   <div id="results">
     <div class="divider"></div>
-    <div id="results-header"><h2>Optimised route</h2></div>
+    <div id="results-header">
+      <h2>Optimised route</h2>
+      <button id="btn-toggle-map">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+        Show map
+      </button>
+    </div>
     <div id="route-summary"></div>
+    <div id="map-panel"></div>
     <div id="split-board"></div>
     <ul id="stop-list"></ul>
     <div class="action-row">
@@ -566,9 +613,10 @@
   <button id="egg-close">✕</button>
 </div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.4.5';
+const APP_VERSION = 'v3.5.1';
 
 // ── PWA MANIFEST ──
 (function() {
@@ -908,7 +956,7 @@ async function optimise() {
     });
   }
 
-  currentResult = { runs, startPc, departTime, returnToWh, vanCount, usingFallback, stops, vanLabels: getVanLabels() };
+  currentResult = { runs, startPc, departTime, returnToWh, vanCount, usingFallback, stops, vanLabels: getVanLabels(), allCoords, matrices };
   renderResults(currentResult);
   setStatus('');
   btn.disabled = false;
@@ -968,7 +1016,9 @@ function renderVanResult(run, startPc, departTime, returnToWh) {
     elapsed=departMin;
     const clockTag=departTime?`<span class="leg-tag clock-tag">Arrive ${addMinsToTime(departTime,arriveMin)}</span>`:'';
     const li=document.createElement('li');
-    li.innerHTML=`<div class="stop-num">${i+1}</div><div class="stop-info"><div class="stop-name">${stop.postcode}</div><div class="leg-meta"><span class="leg-tag">${fmtDist(stop.leg.distKm)}</span><span class="leg-tag time-tag">${fmtMins(driveMin)} drive</span><span class="leg-tag arrive-tag">+${fmtMins(arriveMin)} from start</span>${clockTag}</div></div>`;
+    li.draggable = true;
+    li.dataset.postcode = stop.postcode;
+    li.innerHTML=`<div class="drag-handle">⠿</div><div class="stop-num">${i+1}</div><div class="stop-info"><div class="stop-name">${stop.postcode}</div><div class="leg-meta"><span class="leg-tag">${fmtDist(stop.leg.distKm)}</span><span class="leg-tag time-tag">${fmtMins(driveMin)} drive</span><span class="leg-tag arrive-tag">+${fmtMins(arriveMin)} from start</span>${clockTag}</div></div>`;
     list.appendChild(li);
   });
 
@@ -979,10 +1029,167 @@ function renderVanResult(run, startPc, departTime, returnToWh) {
     li.innerHTML=`<div class="stop-num end-dot">F</div><div class="stop-info"><div class="stop-name">Return to warehouse</div><div class="stop-pc">${startPc}</div><div class="leg-meta"><span class="leg-tag">${fmtDist(run.returnLeg.distKm)}</span><span class="leg-tag time-tag">${fmtMins(run.returnLeg.durMins)} drive</span><span class="leg-tag arrive-tag">+${fmtMins(arriveMin)} from start</span>${clockTag}</div></div>`;
     list.appendChild(li);
   }
+
+  wireStopListDrag();
 }
 
 function updateMapsButton(run) {
   document.getElementById('btn-maps').href = mapsUrl(run.postcodes);
+}
+
+// ── MAP ──
+let leafletMap = null;
+let mapVisible = false;
+
+document.getElementById('btn-toggle-map').addEventListener('click', () => {
+  mapVisible = !mapVisible;
+  const panel = document.getElementById('map-panel');
+  const btn   = document.getElementById('btn-toggle-map');
+  panel.classList.toggle('visible', mapVisible);
+  btn.classList.toggle('active', mapVisible);
+  btn.childNodes.forEach(n => { if (n.nodeType === 3) n.textContent = mapVisible ? ' Hide map' : ' Show map'; });
+  if (mapVisible && currentResult) renderMap(currentResult);
+});
+
+function renderMap(result) {
+  const panel = document.getElementById('map-panel');
+  if (!panel.classList.contains('visible')) return;
+
+  // Destroy existing map instance
+  if (leafletMap) { leafletMap.remove(); leafletMap = null; }
+  panel.innerHTML = '';
+
+  const run       = result.runs[0];
+  const allCoords = result.allCoords;
+  if (!allCoords || !allCoords.length) return;
+
+  leafletMap = L.map(panel, { zoomControl: true, attributionControl: true });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 18
+  }).addTo(leafletMap);
+
+  const points = [];
+
+  // Start marker
+  const startCoord = allCoords[0];
+  points.push([startCoord.lat, startCoord.lng]);
+  L.marker([startCoord.lat, startCoord.lng], { icon: makeIcon('S', '#e05a2b') })
+    .addTo(leafletMap)
+    .bindPopup(`<strong>Warehouse</strong><br>${result.startPc}`);
+
+  // Stop markers in optimised order
+  run.stops.forEach((stop, i) => {
+    // Find coord index — stops[i] came from stops array, allCoords[1..n] match original stops order
+    const coordIdx = result.stops.findIndex(s => s.postcode === stop.postcode) + 1;
+    const coord = allCoords[coordIdx];
+    if (!coord) return;
+    points.push([coord.lat, coord.lng]);
+    L.marker([coord.lat, coord.lng], { icon: makeIcon(String(i+1), '#f0c040') })
+      .addTo(leafletMap)
+      .bindPopup(`<strong>Stop ${i+1}</strong><br>${stop.postcode}`);
+  });
+
+  // Return to warehouse
+  if (result.returnToWh) points.push([startCoord.lat, startCoord.lng]);
+
+  // Route polyline
+  if (points.length > 1) {
+    L.polyline(points, { color: '#4285f4', weight: 3, opacity: 0.8, dashArray: '6 4' }).addTo(leafletMap);
+  }
+
+  leafletMap.fitBounds(L.latLngBounds(points), { padding: [24, 24] });
+}
+
+function makeIcon(label, color) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="36" viewBox="0 0 28 36">
+    <path d="M14 0C6.27 0 0 6.27 0 14c0 9.625 14 22 14 22S28 23.625 28 14C28 6.27 21.73 0 14 0z" fill="${color}"/>
+    <text x="14" y="18" text-anchor="middle" dominant-baseline="middle" font-family="system-ui,sans-serif" font-size="11" font-weight="900" fill="#0f0f1a">${label}</text>
+  </svg>`;
+  return L.divIcon({
+    html: svg,
+    className: '',
+    iconSize: [28, 36],
+    iconAnchor: [14, 36],
+    popupAnchor: [0, -36]
+  });
+}
+
+// ── DRAG TO REORDER (single-van stop list) ──
+let dragSrcLi = null;
+
+function wireStopListDrag() {
+  const list = document.getElementById('stop-list');
+  // Only wire draggable items (not the start S or finish F rows)
+  const items = Array.from(list.querySelectorAll('li[draggable="true"]'));
+
+  items.forEach(li => {
+    li.addEventListener('dragstart', e => {
+      dragSrcLi = li;
+      li.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    li.addEventListener('dragend', () => {
+      li.classList.remove('dragging');
+      list.querySelectorAll('li').forEach(l => { l.classList.remove('drag-over-top','drag-over-bottom'); });
+    });
+    li.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (!dragSrcLi || dragSrcLi === li) return;
+      const rect = li.getBoundingClientRect();
+      const mid  = rect.top + rect.height / 2;
+      li.classList.toggle('drag-over-top',    e.clientY < mid);
+      li.classList.toggle('drag-over-bottom', e.clientY >= mid);
+    });
+    li.addEventListener('dragleave', () => {
+      li.classList.remove('drag-over-top','drag-over-bottom');
+    });
+    li.addEventListener('drop', e => {
+      e.preventDefault();
+      if (!dragSrcLi || dragSrcLi === li) return;
+      const rect = li.getBoundingClientRect();
+      const mid  = rect.top + rect.height / 2;
+      const before = e.clientY < mid;
+      list.insertBefore(dragSrcLi, before ? li : li.nextSibling);
+      li.classList.remove('drag-over-top','drag-over-bottom');
+      applyManualReorder();
+    });
+  });
+}
+
+function applyManualReorder() {
+  if (!currentResult || currentResult.runs.length > 1) return;
+  const list = document.getElementById('stop-list');
+  // Collect new stop order from DOM (skip first=start, skip last if it's F=finish)
+  const items = Array.from(list.querySelectorAll('li[draggable="true"]'));
+  const newOrder = items.map(li => li.dataset.postcode).filter(Boolean);
+
+  const { allCoords, matrices, stops, startPc, departTime, returnToWh } = currentResult;
+  if (!matrices) return;
+
+  // Rebuild run with new order
+  const reorderedStops = newOrder.map(pc => stops.find(s => s.postcode === pc)).filter(Boolean);
+
+  // Recalculate legs from matrix
+  let prev = 0; // warehouse index
+  const newStopsWithLegs = reorderedStops.map(stop => {
+    const idx = stops.findIndex(s => s.postcode === stop.postcode) + 1;
+    const leg = { distKm: matrices.distKm[prev][idx], durMins: matrices.durMins[prev][idx] };
+    prev = idx;
+    return { ...stop, leg };
+  });
+
+  const returnLeg = returnToWh && newStopsWithLegs.length
+    ? { distKm: matrices.distKm[prev][0], durMins: matrices.durMins[prev][0] }
+    : null;
+
+  const postcodes = [startPc, ...newStopsWithLegs.map(s=>s.postcode)];
+  if (returnToWh) postcodes.push(startPc);
+
+  currentResult.runs[0] = { stops: newStopsWithLegs, postcodes, returnLeg };
+  renderVanResult(currentResult.runs[0], startPc, departTime, returnToWh);
+  updateMapsButton(currentResult.runs[0]);
+  if (mapVisible) renderMap(currentResult);
 }
 
 // ── SPLIT BOARD ──
@@ -1224,11 +1431,9 @@ async function showShareModal(vanIdx) {
     if (!r) return;
     const payload = decodeRoute(r);
     if (!payload || !payload.runs) return;
-    // Save to localStorage so it persists after URL is closed
+    // Save to localStorage as a cache — but do NOT strip the URL param
+    // so the same link keeps working on repeat opens
     localStorage.setItem('haul_driver_route', JSON.stringify({ ...payload, pushedAt: new Date().toISOString() }));
-    // Strip the param from the URL cleanly
-    const clean = window.location.href.split('?')[0];
-    window.history.replaceState({}, '', clean);
     // Will be rendered by renderDriverView(null) call below
   } catch {}
 })();
@@ -1236,11 +1441,21 @@ async function showShareModal(vanIdx) {
 // ── DRIVER VIEW RENDER ──
 function renderDriverView(result) {
   if (!result) {
-    // Try loading from localStorage
+    // Try URL param first (most up to date), then localStorage
     try {
-      const stored = localStorage.getItem('haul_driver_route');
-      if (stored) result = JSON.parse(stored);
+      const params = new URLSearchParams(window.location.search);
+      const r = params.get('r');
+      if (r) {
+        const payload = decodeRoute(r);
+        if (payload && payload.runs) result = payload;
+      }
     } catch {}
+    if (!result) {
+      try {
+        const stored = localStorage.getItem('haul_driver_route');
+        if (stored) result = JSON.parse(stored);
+      } catch {}
+    }
   }
   if (!result) { document.getElementById('driver-no-route').style.display='block'; document.getElementById('driver-route').style.display='none'; return; }
 
