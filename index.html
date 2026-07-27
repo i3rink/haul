@@ -1,4 +1,4 @@
-<!-- Haul v2.0.0 -->
+<!-- Haul v3.0.0 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -30,6 +30,69 @@
     html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 15px; line-height: 1.5; }
     a { color: var(--accent); }
 
+    /* ── PIN SCREEN ── */
+    #pin-screen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 500;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 24px;
+    }
+    #pin-screen.active { display: flex; }
+    #pin-logo { font-size: 36px; font-weight: 900; color: var(--accent); margin-bottom: 8px; letter-spacing: -1px; }
+    #pin-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 32px; }
+    #pin-dots { display: flex; gap: 14px; margin-bottom: 28px; }
+    .pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border); background: transparent; transition: background 0.15s, border-color 0.15s; }
+    .pin-dot.filled { background: var(--accent); border-color: var(--accent); }
+    .pin-dot.error { background: var(--danger); border-color: var(--danger); }
+    #pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; max-width: 260px; }
+    .pin-key {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 22px;
+      font-weight: 600;
+      padding: 18px 10px;
+      cursor: pointer;
+      text-align: center;
+      font-family: var(--font);
+      transition: background 0.1s, border-color 0.1s;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .pin-key:active { background: var(--surface2); border-color: var(--accent); }
+    .pin-key.del { font-size: 16px; color: var(--muted); }
+    #pin-cancel { margin-top: 20px; background: none; border: none; color: var(--muted); font-size: 13px; cursor: pointer; padding: 8px; }
+
+    /* ── MODE BAR ── */
+    #mode-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 14px;
+      font-size: 12px;
+    }
+    #mode-label { font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+    #mode-label.admin { color: var(--accent); }
+    #mode-label.driver { color: var(--green); }
+    #mode-toggle-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+
     /* ── NAV TABS ── */
     #tab-bar {
       display: flex;
@@ -39,19 +102,7 @@
       top: 0;
       z-index: 100;
     }
-    .tab-btn {
-      flex: 1;
-      background: none;
-      border: none;
-      border-bottom: 3px solid transparent;
-      color: var(--muted);
-      font-size: 13px;
-      font-weight: 600;
-      padding: 13px 8px 10px;
-      cursor: pointer;
-      transition: color 0.15s, border-color 0.15s;
-      white-space: nowrap;
-    }
+    .tab-btn { flex: 1; background: none; border: none; border-bottom: 3px solid transparent; color: var(--muted); font-size: 13px; font-weight: 600; padding: 13px 8px 10px; cursor: pointer; transition: color 0.15s, border-color 0.15s; white-space: nowrap; }
     .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
 
     /* ── PAGES ── */
@@ -59,22 +110,8 @@
     .page.active { display: block; }
 
     /* ── HEADER ── */
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 28px;
-    }
-    #app-title {
-      font-size: 28px;
-      font-weight: 900;
-      letter-spacing: -0.5px;
-      color: var(--accent);
-      cursor: default;
-      user-select: none;
-      -webkit-user-select: none;
-      line-height: 1;
-    }
+    header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+    #app-title { font-size: 28px; font-weight: 900; letter-spacing: -0.5px; color: var(--accent); cursor: default; user-select: none; -webkit-user-select: none; line-height: 1; }
     #app-title span { display: inline-block; transition: transform 0.1s; }
     #app-title span:active { transform: scale(0.92); }
     #app-version { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.5px; margin-left: 8px; vertical-align: middle; opacity: 0.7; }
@@ -86,63 +123,43 @@
     .section-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
     .field-group { margin-bottom: 20px; }
     .field-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
-
     input[type="text"], input[type="time"], input[type="number"], select {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      color: var(--text);
-      font-size: 15px;
-      padding: 10px 12px;
-      outline: none;
-      width: 100%;
-      transition: border-color 0.15s;
-      font-family: var(--font);
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 15px; padding: 10px 12px; outline: none; width: 100%; transition: border-color 0.15s; font-family: var(--font);
     }
     input:focus, select:focus { border-color: var(--accent); }
     input::placeholder { color: var(--muted); }
     input[readonly] { opacity: 0.55; cursor: not-allowed; }
     select option { background: var(--surface); }
-
-    .stop-postcode { width: 130px; min-width: 100px; flex-shrink: 0; text-transform: uppercase; }
+    .stop-postcode { flex: 1; text-transform: uppercase; }
     .stop-postcode::placeholder { text-transform: none; }
-    .stop-label { flex: 1; }
-
     .btn-remove { background: none; border: 1px solid var(--border); border-radius: var(--radius); color: var(--muted); font-size: 18px; line-height: 1; padding: 6px 10px; cursor: pointer; flex-shrink: 0; }
     .btn-remove:hover { border-color: var(--danger); color: var(--danger); }
-
     #btn-add-stop { background: none; border: 1px dashed var(--border); border-radius: var(--radius); color: var(--muted); font-size: 13px; padding: 9px 14px; cursor: pointer; width: 100%; text-align: left; transition: border-color 0.15s, color 0.15s; }
     #btn-add-stop:hover { border-color: var(--accent); color: var(--accent); }
-
-    /* ── OPTIONS ROW ── */
-    .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .options-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
     .options-grid .field-group { margin-bottom: 0; }
-    .inline-label { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-    .inline-label input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); flex-shrink: 0; cursor: pointer; }
     .check-group { display: flex; align-items: center; gap: 10px; padding: 11px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
     .check-group span { font-size: 14px; color: var(--text); }
+    input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); flex-shrink: 0; cursor: pointer; }
+    .unit-toggle { flex: 1; background: none; border: none; color: var(--muted); font-size: 14px; font-weight: 600; padding: 10px 8px; cursor: pointer; transition: background 0.15s, color 0.15s; font-family: var(--font); }
+    .unit-toggle.active { background: var(--accent); color: #0f0f1a; }
 
     /* ── BUTTONS ── */
     .btn-primary { background: var(--accent); color: #0f0f1a; border: none; border-radius: var(--radius); padding: 13px 22px; font-size: 15px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 4px; transition: opacity 0.15s; }
     .btn-primary:hover { opacity: 0.9; }
     .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
-
     #status { margin: 16px 0; font-size: 13px; color: var(--muted); min-height: 20px; }
     #status.error { color: var(--danger); }
 
     /* ── RESULTS ── */
     #results { margin-top: 28px; display: none; }
     .divider { height: 1px; background: var(--border); margin: 24px 0; }
-
     #results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
     #results-header h2 { font-size: 14px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted); }
-
     #route-summary { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
     .summary-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; font-size: 13px; color: var(--text); white-space: nowrap; }
     .summary-pill span { color: var(--accent); font-weight: 700; }
     .summary-pill.warn { border-color: var(--danger); color: var(--danger); }
-
-    /* ── VAN TABS ── */
     #van-tabs { display: none; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
     #van-tabs.visible { display: flex; }
     .van-tab { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: var(--muted); font-size: 13px; font-weight: 600; padding: 7px 14px; cursor: pointer; transition: all 0.15s; }
@@ -152,42 +169,51 @@
     #stop-list { list-style: none; margin-bottom: 20px; }
     #stop-list li { display: flex; align-items: flex-start; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--border); }
     #stop-list li:last-child { border-bottom: none; }
-
     .stop-num { background: var(--accent); color: #0f0f1a; font-size: 11px; font-weight: 900; min-width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
     .stop-num.start-dot { background: var(--accent2); }
     .stop-num.end-dot { background: var(--green); }
-
     .stop-info { flex: 1; }
     .stop-info .stop-name { font-weight: 600; font-size: 15px; }
     .stop-info .stop-pc { font-size: 12px; color: var(--muted); margin-top: 1px; }
-
     .leg-meta { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
     .leg-tag { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: rgba(240,192,64,0.1); color: var(--accent); border: 1px solid rgba(240,192,64,0.2); }
     .leg-tag.time-tag { background: rgba(224,90,43,0.1); color: #f08060; border-color: rgba(224,90,43,0.2); }
     .leg-tag.arrive-tag { background: rgba(100,180,100,0.1); color: #88cc88; border-color: rgba(100,180,100,0.2); }
     .leg-tag.clock-tag { background: rgba(100,140,220,0.1); color: #88aaee; border-color: rgba(100,140,220,0.2); }
 
+    /* ── DRIVER VIEW STOP LIST ── */
+    #driver-stop-list { list-style: none; margin-bottom: 24px; }
+    #driver-stop-list li { display: flex; align-items: flex-start; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--border); }
+    #driver-stop-list li:last-child { border-bottom: none; }
+    .driver-num { background: var(--accent); color: #0f0f1a; font-size: 14px; font-weight: 900; min-width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+    .driver-num.start-dot { background: var(--accent2); }
+    .driver-num.end-dot { background: var(--green); }
+    .driver-stop-info { flex: 1; }
+    .driver-postcode { font-size: 20px; font-weight: 700; letter-spacing: 1px; color: var(--text); }
+    .driver-meta { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+    .driver-tag { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 4px; }
+    .driver-tag.dist { background: rgba(240,192,64,0.12); color: var(--accent); border: 1px solid rgba(240,192,64,0.25); }
+    .driver-tag.drive { background: rgba(224,90,43,0.1); color: #f08060; border: 1px solid rgba(224,90,43,0.2); }
+    .driver-tag.clock { background: rgba(100,140,220,0.12); color: #88aaee; border: 1px solid rgba(100,140,220,0.25); font-size: 13px; font-weight: 700; }
+
+    /* ── NO ROUTE STATE ── */
+    #driver-no-route { text-align: center; padding: 60px 24px; color: var(--muted); }
+    #driver-no-route .icon { font-size: 40px; margin-bottom: 14px; }
+    #driver-no-route p { font-size: 15px; line-height: 1.6; }
+
     /* ── ACTION BUTTONS ── */
     .action-row { display: flex; gap: 10px; flex-wrap: wrap; }
     .btn-action { flex: 1; min-width: 140px; border: none; border-radius: var(--radius); padding: 13px 16px; font-size: 14px; font-weight: 700; cursor: pointer; text-align: center; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: opacity 0.15s; }
     .btn-action:hover { opacity: 0.88; }
-    #btn-maps  { background: #4285f4; color: #fff; }
-    #btn-copy  { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    #btn-maps { background: #4285f4; color: #fff; }
+    #btn-driver-maps { background: #4285f4; color: #fff; width: 100%; margin-bottom: 10px; font-size: 16px; padding: 16px; border-radius: var(--radius); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; text-decoration: none; }
+    #btn-copy { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
     #btn-print { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
     #btn-save-run { background: var(--green); color: #fff; }
     #btn-reset { background: var(--surface); color: var(--muted); border: 1px solid var(--border); font-size: 13px; width: 100%; margin-top: 10px; }
 
     /* ── SAVED ROUTES ── */
-    .saved-route-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 14px 16px;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+    .saved-route-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; }
     .saved-route-info { flex: 1; }
     .saved-route-name { font-weight: 700; font-size: 15px; }
     .saved-route-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
@@ -197,82 +223,43 @@
     .btn-small.danger:hover { border-color: var(--danger); color: var(--danger); }
     .btn-small.primary { background: var(--accent); color: #0f0f1a; border-color: var(--accent); }
 
-    /* ── HISTORY / MILEAGE ── */
-    .history-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 14px 16px;
-      margin-bottom: 10px;
-    }
+    /* ── HISTORY ── */
+    .history-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; }
     .history-card-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
     .history-date { font-size: 12px; color: var(--muted); }
     .history-stops { font-size: 13px; color: var(--text); }
     .history-dist { font-size: 15px; font-weight: 700; color: var(--accent); }
     .history-stops-list { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.6; }
-
-    .mileage-summary-bar {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-      margin-bottom: 20px;
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      text-align: center;
-    }
+    .mileage-summary-bar { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; text-align: center; }
     .mileage-stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 4px; }
     .mileage-stat-value { font-size: 22px; font-weight: 900; color: var(--accent); }
-
     .history-controls { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
     .history-controls select { flex: 1; min-width: 120px; }
-
-    /* ── EMPTY STATE ── */
     .empty-state { text-align: center; padding: 48px 24px; color: var(--muted); }
     .empty-state .empty-icon { font-size: 36px; margin-bottom: 12px; }
     .empty-state p { font-size: 14px; line-height: 1.6; }
 
     /* ── MODAL ── */
-    #modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.7);
-      z-index: 200;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
+    #modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
     #modal-overlay.active { display: flex; }
-    #modal-box {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 24px;
-      width: 100%;
-      max-width: 420px;
-    }
+    #modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; width: 100%; max-width: 420px; }
     #modal-box h3 { font-size: 17px; font-weight: 700; margin-bottom: 16px; }
     .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
     .modal-actions button { flex: 1; }
 
-    /* ── PRINT STYLES ── */
+    /* ── PRINT ── */
     @media print {
-      #tab-bar, #btn-maps, #btn-copy, #btn-print, #btn-save-run, #btn-reset, #van-tabs, .action-row, #modal-overlay, #egg-overlay { display: none !important; }
+      #tab-bar, #mode-bar, #pin-screen, #btn-maps, #btn-copy, #btn-print, #btn-save-run, #btn-reset, #van-tabs, .action-row, #modal-overlay, #egg-overlay, #btn-driver-maps { display: none !important; }
       body { background: #fff; color: #000; font-size: 12pt; }
       #app { max-width: 100%; padding: 0; }
       .page { display: block !important; padding: 0; }
       #results { display: block !important; }
-      #planner-page { display: block !important; }
-      .stop-num { background: #000 !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .stop-num.start-dot { background: #555 !important; }
-      .stop-num.end-dot { background: #333 !important; }
+      .stop-num, .driver-num { background: #000 !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .stop-num.start-dot, .driver-num.start-dot { background: #555 !important; }
       .summary-pill { border: 1px solid #ccc; color: #000; }
       .summary-pill span { color: #000; font-weight: bold; }
-      .leg-tag { border: 1px solid #ccc; color: #333; background: none; }
-      #stop-list li { border-bottom: 1px solid #ddd; }
-      .divider { background: #ddd; }
+      .leg-tag, .driver-tag { border: 1px solid #ccc; color: #333; background: none; }
+      #stop-list li, #driver-stop-list li { border-bottom: 1px solid #ddd; }
     }
 
     /* ── EASTER EGG ── */
@@ -285,34 +272,80 @@
 </head>
 <body>
 
-<div id="tab-bar">
+<!-- ── PIN SCREEN ── -->
+<div id="pin-screen">
+  <div id="pin-logo">Haul</div>
+  <div id="pin-subtitle">Enter admin PIN</div>
+  <div id="pin-dots">
+    <div class="pin-dot" id="pd0"></div>
+    <div class="pin-dot" id="pd1"></div>
+    <div class="pin-dot" id="pd2"></div>
+    <div class="pin-dot" id="pd3"></div>
+  </div>
+  <div id="pin-pad">
+    <button class="pin-key" data-n="1">1</button>
+    <button class="pin-key" data-n="2">2</button>
+    <button class="pin-key" data-n="3">3</button>
+    <button class="pin-key" data-n="4">4</button>
+    <button class="pin-key" data-n="5">5</button>
+    <button class="pin-key" data-n="6">6</button>
+    <button class="pin-key" data-n="7">7</button>
+    <button class="pin-key" data-n="8">8</button>
+    <button class="pin-key" data-n="9">9</button>
+    <div></div>
+    <button class="pin-key" data-n="0">0</button>
+    <button class="pin-key del" id="pin-del">⌫</button>
+  </div>
+  <button id="pin-cancel">Cancel</button>
+</div>
+
+<!-- ── MODE BAR ── -->
+<div id="mode-bar">
+  <span id="mode-label" class="driver">Driver view</span>
+  <button id="mode-toggle-btn">Admin</button>
+</div>
+
+<!-- ── TAB BAR (admin only) ── -->
+<div id="tab-bar" style="display:none;">
   <button class="tab-btn active" data-tab="planner">Planner</button>
   <button class="tab-btn" data-tab="saved">Saved routes</button>
   <button class="tab-btn" data-tab="history">Mileage log</button>
 </div>
 
-<!-- ── PLANNER PAGE ── -->
-<div id="planner-page" class="page active">
+<!-- ── DRIVER PAGE ── -->
+<div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v2.0.0</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.0.0</span></div>
     <button id="btn-install">Install App</button>
   </header>
+  <div id="ios-banner">To install Haul on your home screen: tap the Share button in Safari, then choose "Add to Home Screen".</div>
 
-  <div id="ios-banner">
-    To install Haul on your home screen: tap the Share button in Safari, then choose "Add to Home Screen".
+  <div id="driver-no-route">
+    <div class="icon">🚐</div>
+    <p>No route loaded yet.<br>Ask your planner to optimise and push a route.</p>
   </div>
 
+  <div id="driver-route" style="display:none;">
+    <div id="driver-summary" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;"></div>
+    <a id="btn-driver-maps" target="_blank" rel="noopener">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+      Open in Google Maps
+    </a>
+    <ul id="driver-stop-list"></ul>
+  </div>
+</div>
+
+<!-- ── PLANNER PAGE ── -->
+<div id="planner-page" class="page">
   <div class="field-group">
     <div class="section-label">Warehouse (start)</div>
     <input type="text" id="start-postcode" value="KA11 4HP" readonly>
   </div>
-
   <div class="field-group">
     <div class="section-label">Delivery stops</div>
     <div id="stops-container"></div>
     <button id="btn-add-stop">+ Add stop</button>
   </div>
-
   <div class="options-grid">
     <div class="field-group">
       <div class="section-label">Departure time</div>
@@ -322,16 +355,20 @@
       <div class="section-label">Number of vans</div>
       <input type="number" id="van-count" value="1" min="1" max="10">
     </div>
+    <div class="field-group">
+      <div class="section-label">Distance unit</div>
+      <div style="display:flex;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+        <button id="unit-miles" class="unit-toggle active" data-unit="mi">Miles</button>
+        <button id="unit-km" class="unit-toggle" data-unit="km">km</button>
+      </div>
+    </div>
   </div>
-
   <label class="check-group field-group" style="display:flex;">
     <input type="checkbox" id="return-to-wh">
     <span>Include return to warehouse</span>
   </label>
-
   <button class="btn-primary" id="btn-optimise">Optimise route</button>
   <div id="status"></div>
-
   <div id="results">
     <div class="divider"></div>
     <div id="results-header"><h2>Optimised route</h2></div>
@@ -358,8 +395,12 @@
         Save to mileage log
       </button>
       <button id="btn-save-route" class="btn-action" style="background:var(--surface);border:1px solid var(--border);color:var(--text);">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><bookmark-icon/><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
         Save as route
+      </button>
+      <button id="btn-push-driver" class="btn-action" style="background:var(--green);color:#fff;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Push to driver
       </button>
     </div>
     <button id="btn-reset" class="btn-action">Clear and start over</button>
@@ -380,9 +421,7 @@
   </div>
   <div id="mileage-summary-bar" class="mileage-summary-bar"></div>
   <div class="history-controls">
-    <select id="history-filter-month">
-      <option value="all">All time</option>
-    </select>
+    <select id="history-filter-month"><option value="all">All time</option></select>
     <button id="btn-clear-history" class="btn-small danger">Clear all</button>
   </div>
   <div id="history-list"></div>
@@ -391,7 +430,7 @@
 <!-- ── MODAL ── -->
 <div id="modal-overlay">
   <div id="modal-box">
-    <h3 id="modal-title">Save route</h3>
+    <h3 id="modal-title"></h3>
     <div id="modal-body"></div>
     <div class="modal-actions" id="modal-actions"></div>
   </div>
@@ -406,7 +445,7 @@
 
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v2.0.0';
+const APP_VERSION = 'v3.0.0';
 
 // ── PWA MANIFEST ──
 (function() {
@@ -417,7 +456,7 @@ const APP_VERSION = 'v2.0.0';
 
 // ── SERVICE WORKER ──
 if ('serviceWorker' in navigator) {
-  const sw = `const CACHE='haul-v2';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])));self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,c));return r;}).catch(()=>caches.match(e.request)));});`;
+  const sw = `const CACHE='haul-v3';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./'])));self.skipWaiting();});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim();});self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).then(r=>{const c=r.clone();caches.open(CACHE).then(ca=>ca.put(e.request,c));return r;}).catch(()=>caches.match(e.request)));});`;
   navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'}))).catch(()=>{});
 }
 
@@ -434,33 +473,120 @@ btnInstall.addEventListener('click', async () => { if (!deferredPrompt) return; 
     document.getElementById('ios-banner').style.display = 'block';
 })();
 
-// ── TABS ──
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+// ── MODE: driver / admin ──
+const ADMIN_PIN = '1690';
+let isAdmin = false;
+let pinBuffer = '';
+
+function setMode(admin) {
+  isAdmin = admin;
+  document.getElementById('mode-label').textContent = admin ? 'Admin' : 'Driver view';
+  document.getElementById('mode-label').className = admin ? 'admin' : 'driver';
+  document.getElementById('mode-toggle-btn').textContent = admin ? 'Lock' : 'Admin';
+  document.getElementById('tab-bar').style.display = admin ? 'flex' : 'none';
+  if (admin) {
+    showPage('planner');
+  } else {
+    // Hide all admin pages, show driver page
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById(btn.dataset.tab + '-page').classList.add('active');
-    if (btn.dataset.tab === 'saved') renderSavedRoutes();
-    if (btn.dataset.tab === 'history') renderHistory();
+    document.getElementById('driver-page').classList.add('active');
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  }
+}
+
+document.getElementById('mode-toggle-btn').addEventListener('click', () => {
+  if (isAdmin) {
+    setMode(false);
+  } else {
+    showPinScreen();
+  }
+});
+
+// ── PIN SCREEN ──
+function showPinScreen() {
+  pinBuffer = '';
+  updatePinDots();
+  document.getElementById('pin-screen').classList.add('active');
+}
+function hidePinScreen() {
+  document.getElementById('pin-screen').classList.remove('active');
+  pinBuffer = '';
+  updatePinDots();
+}
+
+document.getElementById('pin-cancel').addEventListener('click', hidePinScreen);
+
+document.querySelectorAll('.pin-key[data-n]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (pinBuffer.length >= 4) return;
+    pinBuffer += btn.dataset.n;
+    updatePinDots();
+    if (pinBuffer.length === 4) checkPin();
   });
+});
+
+document.getElementById('pin-del').addEventListener('click', () => {
+  pinBuffer = pinBuffer.slice(0, -1);
+  updatePinDots();
+});
+
+// Hardware keyboard support on PIN screen
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('pin-screen').classList.contains('active')) return;
+  if (/^[0-9]$/.test(e.key) && pinBuffer.length < 4) {
+    pinBuffer += e.key;
+    updatePinDots();
+    if (pinBuffer.length === 4) checkPin();
+  }
+  if (e.key === 'Backspace') { pinBuffer = pinBuffer.slice(0, -1); updatePinDots(); }
+  if (e.key === 'Escape') hidePinScreen();
+});
+
+function updatePinDots() {
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById(`pd${i}`);
+    dot.classList.toggle('filled', i < pinBuffer.length);
+    dot.classList.remove('error');
+  }
+}
+
+function checkPin() {
+  if (pinBuffer === ADMIN_PIN) {
+    hidePinScreen();
+    setMode(true);
+  } else {
+    for (let i = 0; i < 4; i++) document.getElementById(`pd${i}`).classList.add('error');
+    setTimeout(() => { pinBuffer = ''; updatePinDots(); }, 800);
+  }
+}
+
+// ── TABS (admin only) ──
+function showPage(tabName) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabName));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(tabName + '-page').classList.add('active');
+  if (tabName === 'saved') renderSavedRoutes();
+  if (tabName === 'history') renderHistory();
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => showPage(btn.dataset.tab));
 });
 
 // ── STOPS UI ──
 const stopsContainer = document.getElementById('stops-container');
 let stopCount = 0;
 
-function addStop(postcode='', label='') {
+function addStop(postcode='') {
   if (stopCount >= 20) return;
   stopCount++;
   const row = document.createElement('div');
   row.className = 'field-row';
   row.innerHTML = `
-    <input type="text" class="stop-postcode" placeholder="Postcode" value="${postcode}" autocomplete="off" spellcheck="false">
-    <input type="text" class="stop-label" placeholder="Label (e.g. Drop A)" value="${label}" autocomplete="off">
+    <input type="text" class="stop-postcode" placeholder="Postcode" value="${postcode}" autocomplete="off" spellcheck="false" style="flex:1;width:auto;">
     <button class="btn-remove" title="Remove">×</button>
   `;
-  row.querySelector('.btn-remove').addEventListener('click', () => { row.remove(); stopCount = Math.max(0,stopCount-1); });
+  row.querySelector('.btn-remove').addEventListener('click', () => { row.remove(); stopCount = Math.max(0, stopCount-1); });
   stopsContainer.appendChild(row);
 }
 addStop(); addStop(); addStop();
@@ -475,7 +601,25 @@ function haversine(a, b) {
 function normPC(pc) { return pc.trim().toUpperCase().replace(/\s+/g,' '); }
 function setStatus(msg, isError=false) { const el=document.getElementById('status'); el.textContent=msg; el.className=isError?'error':''; }
 function fmtMins(m) { if(m<60) return `${Math.round(m)} min`; const h=Math.floor(m/60),mn=Math.round(m%60); return mn===0?`${h}h`:`${h}h ${mn}m`; }
-function fmtDist(km) { return km<1?`${Math.round(km*1000)} m`:`${km.toFixed(1)} km`; }
+
+// ── UNITS ──
+let useKm = false;
+const KM_TO_MI = 0.621371;
+function fmtDist(km) {
+  if (useKm) return km < 1 ? `${Math.round(km*1000)} m` : `${km.toFixed(1)} km`;
+  const mi = km * KM_TO_MI;
+  return mi < 0.1 ? `${Math.round(mi*1760)} yd` : `${mi.toFixed(1)} mi`;
+}
+function fmtDistRaw(km) { return useKm ? `${km.toFixed(2)} km` : `${(km*KM_TO_MI).toFixed(2)} mi`; }
+
+document.querySelectorAll('.unit-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    useKm = btn.dataset.unit === 'km';
+    document.querySelectorAll('.unit-toggle').forEach(b => b.classList.toggle('active', b.dataset.unit === (useKm?'km':'mi')));
+    if (currentResult) { renderResults(currentResult); renderDriverView(currentResult); }
+    if (document.getElementById('history-page').classList.contains('active')) renderHistory();
+  });
+});
 
 function addMinsToTime(timeStr, mins) {
   if (!timeStr) return null;
@@ -512,73 +656,44 @@ async function osrmMatrix(coords) {
 }
 
 // ── NEAREST-NEIGHBOUR TSP ──
-function nearestNeighbour(distKm, durMins, startIdx, excludeIndices=[]) {
-  const n = distKm.length;
-  const visited = new Array(n).fill(false);
-  excludeIndices.forEach(i => { visited[i] = true; });
-  const tour = [startIdx];
-  const legs = [];
-  let current = startIdx;
-  visited[startIdx] = true;
-  const remaining = n - 1 - excludeIndices.length;
-  for (let step = 0; step < remaining; step++) {
+function nearestNeighbour(distKm, durMins, startIdx) {
+  const n=distKm.length; const visited=new Array(n).fill(false);
+  const tour=[startIdx]; const legs=[]; let current=startIdx; visited[startIdx]=true;
+  for (let step=1; step<n; step++) {
     let best=Infinity, bestIdx=-1;
-    for (let j=0; j<n; j++) {
-      if (!visited[j] && durMins[current][j] < best) { best=durMins[current][j]; bestIdx=j; }
-    }
-    if (bestIdx === -1) break;
-    visited[bestIdx] = true;
-    legs.push({ distKm:distKm[current][bestIdx], durMins:durMins[current][bestIdx] });
-    tour.push(bestIdx);
-    current = bestIdx;
+    for (let j=0; j<n; j++) { if(!visited[j]&&durMins[current][j]<best){best=durMins[current][j];bestIdx=j;} }
+    if (bestIdx===-1) break;
+    visited[bestIdx]=true; legs.push({distKm:distKm[current][bestIdx],durMins:durMins[current][bestIdx]}); tour.push(bestIdx); current=bestIdx;
   }
   return { tour, legs };
 }
 
-// ── SPLIT STOPS ACROSS VANS (round-robin nearest-neighbour) ──
+// ── SPLIT RUNS ──
 function splitRuns(distKm, durMins, vanCount, stopCount) {
-  // Indices 0=warehouse, 1..stopCount=stops
-  const n = stopCount;
-  const stopsPerVan = Math.ceil(n / vanCount);
-  const assigned = new Array(n+1).fill(false);
-  assigned[0] = true; // warehouse excluded from assignment
-  const runs = [];
-
-  for (let v = 0; v < vanCount; v++) {
-    const remaining = n - runs.reduce((a,r)=>a+r.stopIdxs.length,0);
-    if (remaining === 0) break;
-    const count = v < vanCount-1 ? stopsPerVan : remaining;
-    // Build this van's tour greedily from warehouse
-    const excludes = [];
-    for (let i=1; i<=n; i++) { if (assigned[i]) excludes.push(i); }
-    // Temporarily build partial tour picking `count` stops
-    const tour = [0];
-    const legs = [];
-    let current = 0;
-    const localVisited = new Array(n+1).fill(false);
-    localVisited[0] = true;
-    excludes.forEach(i => { localVisited[i] = true; });
+  const n=stopCount; const stopsPerVan=Math.ceil(n/vanCount);
+  const assigned=new Array(n+1).fill(false); assigned[0]=true; const runs=[];
+  for (let v=0; v<vanCount; v++) {
+    const remaining=n-runs.reduce((a,r)=>a+r.stopIdxs.length,0);
+    if (remaining===0) break;
+    const count=v<vanCount-1?stopsPerVan:remaining;
+    const excludes=[]; for(let i=1;i<=n;i++){if(assigned[i])excludes.push(i);}
+    const tour=[0]; const legs=[]; let current=0;
+    const lv=new Array(n+1).fill(false); lv[0]=true; excludes.forEach(i=>{lv[i]=true;});
     for (let s=0; s<count; s++) {
-      let best=Infinity, bestIdx=-1;
-      for (let j=1; j<=n; j++) {
-        if (!localVisited[j] && durMins[current][j] < best) { best=durMins[current][j]; bestIdx=j; }
-      }
-      if (bestIdx===-1) break;
-      localVisited[bestIdx] = true;
-      assigned[bestIdx] = true;
-      legs.push({ distKm:distKm[current][bestIdx], durMins:durMins[current][bestIdx] });
-      tour.push(bestIdx);
-      current = bestIdx;
+      let best=Infinity,bestIdx=-1;
+      for(let j=1;j<=n;j++){if(!lv[j]&&durMins[current][j]<best){best=durMins[current][j];bestIdx=j;}}
+      if(bestIdx===-1)break; lv[bestIdx]=true; assigned[bestIdx]=true;
+      legs.push({distKm:distKm[current][bestIdx],durMins:durMins[current][bestIdx]}); tour.push(bestIdx); current=bestIdx;
     }
-    runs.push({ stopIdxs: tour.slice(1), legs });
+    runs.push({ stopIdxs:tour.slice(1), legs });
   }
   return runs;
 }
 
-// ── CURRENT RESULT STATE ──
+// ── RESULT STATE ──
 let currentResult = null;
 
-// ── MAIN OPTIMISE ──
+// ── OPTIMISE ──
 document.getElementById('btn-optimise').addEventListener('click', optimise);
 
 async function optimise() {
@@ -588,22 +703,18 @@ async function optimise() {
 
   const startPc = normPC(document.getElementById('start-postcode').value);
   const departTime = document.getElementById('depart-time').value || null;
-  const vanCount = Math.max(1, Math.min(10, parseInt(document.getElementById('van-count').value) || 1));
+  const vanCount = Math.max(1, Math.min(10, parseInt(document.getElementById('van-count').value)||1));
   const returnToWh = document.getElementById('return-to-wh').checked;
 
   const rows = Array.from(stopsContainer.querySelectorAll('.field-row'));
-  const stops = rows.map(r => ({
-    postcode: normPC(r.querySelector('.stop-postcode').value),
-    label: r.querySelector('.stop-label').value.trim() || r.querySelector('.stop-postcode').value.trim()
-  })).filter(s => s.postcode);
+  const stops = rows.map(r => ({ postcode: normPC(r.querySelector('.stop-postcode').value) })).filter(s => s.postcode);
 
   if (stops.length < 2) { setStatus('Add at least 2 stops.', true); btn.disabled=false; return; }
 
   setStatus('Geocoding postcodes…');
   let allCoords;
-  try {
-    allCoords = await geocodeAll([startPc, ...stops.map(s=>s.postcode)]);
-  } catch(err) { setStatus(err.message, true); btn.disabled=false; return; }
+  try { allCoords = await geocodeAll([startPc, ...stops.map(s=>s.postcode)]); }
+  catch(err) { setStatus(err.message, true); btn.disabled=false; return; }
 
   setStatus('Building route matrix…');
   let matrices = await osrmMatrix(allCoords);
@@ -611,32 +722,30 @@ async function optimise() {
   if (!matrices) {
     usingFallback = true;
     setStatus('OSRM unavailable – using straight-line estimates…');
-    const hav = allCoords.map(a => allCoords.map(b => haversine(a,b)));
+    const hav = allCoords.map(a=>allCoords.map(b=>haversine(a,b)));
     matrices = { distKm:hav, durMins:hav.map(row=>row.map(d=>(d/50)*60)) };
   }
 
   setStatus('Optimising route…');
-
   let runs;
   if (vanCount === 1) {
     const { tour, legs } = nearestNeighbour(matrices.distKm, matrices.durMins, 0);
     const orderedStops = tour.slice(1).map((idx,i) => ({ ...stops[idx-1], leg:legs[i] }));
-    runs = [{ stops: orderedStops, postcodes: [startPc, ...orderedStops.map(s=>s.postcode)] }];
+    runs = [{ stops:orderedStops, postcodes:[startPc,...orderedStops.map(s=>s.postcode)] }];
   } else {
     const split = splitRuns(matrices.distKm, matrices.durMins, vanCount, stops.length);
     runs = split.map(run => {
       const orderedStops = run.stopIdxs.map((idx,i) => ({ ...stops[idx-1], leg:run.legs[i] }));
-      return { stops: orderedStops, postcodes: [startPc, ...orderedStops.map(s=>s.postcode)] };
+      return { stops:orderedStops, postcodes:[startPc,...orderedStops.map(s=>s.postcode)] };
     });
   }
 
-  // Add return leg if requested
   if (returnToWh) {
     runs.forEach(run => {
       if (!run.stops.length) return;
-      const lastIdx = allCoords.findIndex((c,i) => i>0 && stops[i-1].postcode === run.stops[run.stops.length-1].postcode);
+      const lastIdx = allCoords.findIndex((c,i) => i>0 && stops[i-1].postcode===run.stops[run.stops.length-1].postcode);
       if (lastIdx < 0) return;
-      run.returnLeg = { distKm: matrices.distKm[lastIdx][0], durMins: matrices.durMins[lastIdx][0] };
+      run.returnLeg = { distKm:matrices.distKm[lastIdx][0], durMins:matrices.durMins[lastIdx][0] };
       run.postcodes.push(startPc);
     });
   }
@@ -647,59 +756,45 @@ async function optimise() {
   btn.disabled = false;
 }
 
-// ── RENDER ──
+// ── RENDER (admin) ──
 const STOP_DWELL = 15;
 let activeVan = 0;
 
 function renderResults({ runs, startPc, departTime, returnToWh, vanCount, usingFallback }) {
   activeVan = 0;
-
-  // Van tabs
   const vanTabsEl = document.getElementById('van-tabs');
   vanTabsEl.innerHTML = '';
   if (runs.length > 1) {
     vanTabsEl.classList.add('visible');
-    runs.forEach((_, i) => {
+    runs.forEach((_,i) => {
       const btn = document.createElement('button');
-      btn.className = 'van-tab' + (i===0?' active':'');
+      btn.className = 'van-tab'+(i===0?' active':'');
       btn.textContent = `Van ${i+1}`;
       btn.addEventListener('click', () => {
-        activeVan = i;
+        activeVan=i;
         document.querySelectorAll('.van-tab').forEach((b,j)=>b.classList.toggle('active',j===i));
         renderVanResult(runs[i], startPc, departTime, returnToWh);
         updateMapsButton(runs[i]);
       });
       vanTabsEl.appendChild(btn);
     });
-  } else {
-    vanTabsEl.classList.remove('visible');
-  }
+  } else { vanTabsEl.classList.remove('visible'); }
 
   renderVanResult(runs[0], startPc, departTime, returnToWh);
   updateMapsButton(runs[0]);
 
-  // Overall summary (all vans)
-  const totalDist = runs.reduce((a,r) => {
-    let d = r.stops.reduce((s,st)=>s+st.leg.distKm,0);
-    if (r.returnLeg) d += r.returnLeg.distKm;
-    return a+d;
-  }, 0);
-  const totalDrive = runs.reduce((a,r) => {
-    let d = r.stops.reduce((s,st)=>s+st.leg.durMins,0);
-    if (r.returnLeg) d += r.returnLeg.durMins;
-    return a+d;
-  }, 0);
+  const totalDist = runs.reduce((a,r)=>{let d=r.stops.reduce((s,st)=>s+st.leg.distKm,0);if(r.returnLeg)d+=r.returnLeg.distKm;return a+d;},0);
+  const totalDrive = runs.reduce((a,r)=>{let d=r.stops.reduce((s,st)=>s+st.leg.durMins,0);if(r.returnLeg)d+=r.returnLeg.durMins;return a+d;},0);
   const totalStops = runs.reduce((a,r)=>a+r.stops.length,0);
-  const totalTime = totalDrive + totalStops * STOP_DWELL;
+  const totalTime = totalDrive + totalStops*STOP_DWELL;
 
-  const summaryEl = document.getElementById('route-summary');
-  summaryEl.innerHTML = `
-    <div class="summary-pill"><span>${fmtDist(totalDist)}</span> total distance</div>
-    <div class="summary-pill"><span>${fmtMins(totalDrive)}</span> drive time</div>
-    <div class="summary-pill"><span>${fmtMins(totalStops*STOP_DWELL)}</span> stop time (${totalStops} × 15 min)</div>
+  document.getElementById('route-summary').innerHTML = `
+    <div class="summary-pill"><span>${fmtDist(totalDist)}</span> total</div>
+    <div class="summary-pill"><span>${fmtMins(totalDrive)}</span> drive</div>
+    <div class="summary-pill"><span>${fmtMins(totalStops*STOP_DWELL)}</span> stops (${totalStops} × 15 min)</div>
     <div class="summary-pill"><span>${fmtMins(totalTime)}</span> overall</div>
     ${runs.length>1?`<div class="summary-pill"><span>${runs.length}</span> vans</div>`:''}
-    ${usingFallback?'<div class="summary-pill warn">Estimated distances (OSRM unavailable)</div>':''}
+    ${usingFallback?'<div class="summary-pill warn">Straight-line estimates</div>':''}
   `;
 
   document.getElementById('results').style.display = 'block';
@@ -709,67 +804,124 @@ function renderResults({ runs, startPc, departTime, returnToWh, vanCount, usingF
 function renderVanResult(run, startPc, departTime, returnToWh) {
   const list = document.getElementById('stop-list');
   list.innerHTML = '';
-
   const liStart = document.createElement('li');
-  liStart.innerHTML = `
-    <div class="stop-num start-dot">S</div>
-    <div class="stop-info">
-      <div class="stop-name">Warehouse</div>
-      <div class="stop-pc">${startPc} – 18 Macadam Place, Irvine${departTime?` · Departs ${departTime}`:''}</div>
-    </div>
-  `;
+  liStart.innerHTML = `<div class="stop-num start-dot">S</div><div class="stop-info"><div class="stop-name">Warehouse</div><div class="stop-pc">${startPc} – 18 Macadam Place, Irvine${departTime?` · Departs ${departTime}`:''}</div></div>`;
   list.appendChild(liStart);
 
   let elapsed = 0;
-  run.stops.forEach((stop, i) => {
-    const driveMin = stop.leg.durMins;
-    const arriveMin = elapsed + driveMin;
-    const departMin = arriveMin + STOP_DWELL;
-    elapsed = departMin;
-    const clockTag = departTime ? `<span class="leg-tag clock-tag">Arrive ${addMinsToTime(departTime, arriveMin)}</span>` : '';
-    const li = document.createElement('li');
-    li.innerHTML = `
-      <div class="stop-num">${i+1}</div>
-      <div class="stop-info">
-        <div class="stop-name">${stop.label || stop.postcode}</div>
-        <div class="stop-pc">${stop.postcode}</div>
-        <div class="leg-meta">
-          <span class="leg-tag">${fmtDist(stop.leg.distKm)}</span>
-          <span class="leg-tag time-tag">${fmtMins(driveMin)} drive</span>
-          <span class="leg-tag arrive-tag">+${fmtMins(arriveMin)} from start</span>
-          ${clockTag}
-        </div>
-      </div>
-    `;
+  run.stops.forEach((stop,i) => {
+    const driveMin=stop.leg.durMins, arriveMin=elapsed+driveMin, departMin=arriveMin+STOP_DWELL;
+    elapsed=departMin;
+    const clockTag=departTime?`<span class="leg-tag clock-tag">Arrive ${addMinsToTime(departTime,arriveMin)}</span>`:'';
+    const li=document.createElement('li');
+    li.innerHTML=`<div class="stop-num">${i+1}</div><div class="stop-info"><div class="stop-name">${stop.postcode}</div><div class="leg-meta"><span class="leg-tag">${fmtDist(stop.leg.distKm)}</span><span class="leg-tag time-tag">${fmtMins(driveMin)} drive</span><span class="leg-tag arrive-tag">+${fmtMins(arriveMin)} from start</span>${clockTag}</div></div>`;
     list.appendChild(li);
   });
 
-  // Return leg
   if (returnToWh && run.returnLeg) {
-    const arriveMin = elapsed + run.returnLeg.durMins;
-    const clockTag = departTime ? `<span class="leg-tag clock-tag">Back ${addMinsToTime(departTime, arriveMin)}</span>` : '';
-    const li = document.createElement('li');
-    li.innerHTML = `
-      <div class="stop-num end-dot">W</div>
-      <div class="stop-info">
-        <div class="stop-name">Return to warehouse</div>
-        <div class="stop-pc">${startPc}</div>
-        <div class="leg-meta">
-          <span class="leg-tag">${fmtDist(run.returnLeg.distKm)}</span>
-          <span class="leg-tag time-tag">${fmtMins(run.returnLeg.durMins)} drive</span>
-          <span class="leg-tag arrive-tag">+${fmtMins(arriveMin)} from start</span>
-          ${clockTag}
-        </div>
-      </div>
-    `;
+    const arriveMin=elapsed+run.returnLeg.durMins;
+    const clockTag=departTime?`<span class="leg-tag clock-tag">Back ${addMinsToTime(departTime,arriveMin)}</span>`:'';
+    const li=document.createElement('li');
+    li.innerHTML=`<div class="stop-num end-dot">W</div><div class="stop-info"><div class="stop-name">Return to warehouse</div><div class="stop-pc">${startPc}</div><div class="leg-meta"><span class="leg-tag">${fmtDist(run.returnLeg.distKm)}</span><span class="leg-tag time-tag">${fmtMins(run.returnLeg.durMins)} drive</span><span class="leg-tag arrive-tag">+${fmtMins(arriveMin)} from start</span>${clockTag}</div></div>`;
     list.appendChild(li);
   }
 }
 
 function updateMapsButton(run) {
-  document.getElementById('btn-maps').href =
-    'https://www.google.com/maps/dir/' + run.postcodes.map(p=>encodeURIComponent(p)).join('/');
+  document.getElementById('btn-maps').href = 'https://www.google.com/maps/dir/'+run.postcodes.map(p=>encodeURIComponent(p)).join('/');
 }
+
+// ── PUSH TO DRIVER ──
+document.getElementById('btn-push-driver').addEventListener('click', () => {
+  if (!currentResult) return;
+  // Store the current result for driver view
+  try { localStorage.setItem('haul_driver_route', JSON.stringify({ ...currentResult, pushedAt: new Date().toISOString(), unit: useKm ? 'km' : 'mi' })); } catch {}
+  // Switch to driver mode and show route
+  setMode(false);
+  renderDriverView(currentResult);
+  showModal('Route pushed', '<p style="color:var(--muted);font-size:14px;">The driver view has been updated. Hand the device to your driver.</p>', [
+    { label:'Done', fn:closeModal, style:'background:var(--accent);color:#0f0f1a;border:none;' }
+  ]);
+});
+
+// ── DRIVER VIEW RENDER ──
+function renderDriverView(result) {
+  if (!result) {
+    // Try loading from localStorage
+    try {
+      const stored = localStorage.getItem('haul_driver_route');
+      if (stored) result = JSON.parse(stored);
+    } catch {}
+  }
+  if (!result) { document.getElementById('driver-no-route').style.display='block'; document.getElementById('driver-route').style.display='none'; return; }
+
+  document.getElementById('driver-no-route').style.display='none';
+  document.getElementById('driver-route').style.display='block';
+
+  const run = result.runs[0]; // driver always sees van 1; multi-van: each driver gets their own device
+  const { startPc, departTime, returnToWh } = result;
+
+  // Summary
+  const totalDist = run.stops.reduce((a,s)=>a+s.leg.distKm,0) + (run.returnLeg?run.returnLeg.distKm:0);
+  const totalDrive = run.stops.reduce((a,s)=>a+s.leg.durMins,0) + (run.returnLeg?run.returnLeg.durMins:0);
+  const totalTime = totalDrive + run.stops.length * STOP_DWELL;
+  document.getElementById('driver-summary').innerHTML = `
+    <div class="summary-pill"><span>${fmtDist(totalDist)}</span> total</div>
+    <div class="summary-pill"><span>${run.stops.length}</span> stops</div>
+    <div class="summary-pill"><span>${fmtMins(totalTime)}</span> est. total</div>
+    ${departTime?`<div class="summary-pill">Departs <span>${departTime}</span></div>`:''}
+  `;
+
+  // Maps button
+  document.getElementById('btn-driver-maps').href = 'https://www.google.com/maps/dir/'+run.postcodes.map(p=>encodeURIComponent(p)).join('/');
+
+  // Stop list
+  const list = document.getElementById('driver-stop-list');
+  list.innerHTML = '';
+
+  const liStart = document.createElement('li');
+  liStart.innerHTML = `<div class="driver-num start-dot">S</div><div class="driver-stop-info"><div class="driver-postcode">${startPc}</div><div class="driver-meta"><span class="driver-tag dist">Warehouse${departTime?' · Departs '+departTime:''}</span></div></div>`;
+  list.appendChild(liStart);
+
+  let elapsed = 0;
+  run.stops.forEach((stop,i) => {
+    const driveMin=stop.leg.durMins, arriveMin=elapsed+driveMin;
+    elapsed=arriveMin+STOP_DWELL;
+    const clockStr=departTime?addMinsToTime(departTime,arriveMin):null;
+    const li=document.createElement('li');
+    li.innerHTML=`
+      <div class="driver-num">${i+1}</div>
+      <div class="driver-stop-info">
+        <div class="driver-postcode">${stop.postcode}</div>
+        <div class="driver-meta">
+          <span class="driver-tag dist">${fmtDist(stop.leg.distKm)}</span>
+          <span class="driver-tag drive">${fmtMins(driveMin)} drive</span>
+          ${clockStr?`<span class="driver-tag clock">Arrive ${clockStr}</span>`:''}
+        </div>
+      </div>`;
+    list.appendChild(li);
+  });
+
+  if (returnToWh && run.returnLeg) {
+    const arriveMin=elapsed+run.returnLeg.durMins;
+    const clockStr=departTime?addMinsToTime(departTime,arriveMin):null;
+    const li=document.createElement('li');
+    li.innerHTML=`
+      <div class="driver-num end-dot">W</div>
+      <div class="driver-stop-info">
+        <div class="driver-postcode">${startPc}</div>
+        <div class="driver-meta">
+          <span class="driver-tag dist">Return · ${fmtDist(run.returnLeg.distKm)}</span>
+          <span class="driver-tag drive">${fmtMins(run.returnLeg.durMins)} drive</span>
+          ${clockStr?`<span class="driver-tag clock">Back ${clockStr}</span>`:''}
+        </div>
+      </div>`;
+    list.appendChild(li);
+  }
+}
+
+// Load any previously pushed route on startup
+renderDriverView(null);
 
 // ── PRINT ──
 document.getElementById('btn-print').addEventListener('click', () => window.print());
@@ -782,340 +934,189 @@ document.getElementById('btn-copy').addEventListener('click', () => {
   lines.push(`Start: Warehouse (${currentResult.startPc})${currentResult.departTime?' – Departs '+currentResult.departTime:''}`);
   let elapsed = 0;
   run.stops.forEach((stop,i) => {
-    const arrive = elapsed + stop.leg.durMins;
-    const clock = currentResult.departTime ? ` · Arrive ${addMinsToTime(currentResult.departTime, arrive)}` : '';
-    lines.push(`${i+1}. ${stop.label||stop.postcode} (${stop.postcode})  |  ${fmtDist(stop.leg.distKm)}  |  ${fmtMins(stop.leg.durMins)} drive  |  +${fmtMins(arrive)} from start${clock}`);
-    elapsed = arrive + STOP_DWELL;
+    const arrive=elapsed+stop.leg.durMins;
+    const clock=currentResult.departTime?` · Arrive ${addMinsToTime(currentResult.departTime,arrive)}`:'';
+    lines.push(`${i+1}. ${stop.postcode}  |  ${fmtDistRaw(stop.leg.distKm)}  |  ${fmtMins(stop.leg.durMins)} drive  |  +${fmtMins(arrive)} from start${clock}`);
+    elapsed=arrive+STOP_DWELL;
   });
   if (currentResult.returnToWh && run.returnLeg) {
-    const arrive = elapsed + run.returnLeg.durMins;
-    const clock = currentResult.departTime ? ` · Back ${addMinsToTime(currentResult.departTime, arrive)}` : '';
-    lines.push(`Return: Warehouse (${currentResult.startPc})  |  ${fmtDist(run.returnLeg.distKm)}  |  ${fmtMins(run.returnLeg.durMins)} drive${clock}`);
+    const arrive=elapsed+run.returnLeg.durMins;
+    const clock=currentResult.departTime?` · Back ${addMinsToTime(currentResult.departTime,arrive)}`:'';
+    lines.push(`Return: Warehouse (${currentResult.startPc})  |  ${fmtDistRaw(run.returnLeg.distKm)}  |  ${fmtMins(run.returnLeg.durMins)} drive${clock}`);
   }
   navigator.clipboard.writeText(lines.join('\n')).then(() => {
-    const btn = document.getElementById('btn-copy');
-    const orig = btn.innerHTML;
-    btn.textContent = 'Copied!';
-    setTimeout(()=>{ btn.innerHTML=orig; }, 2000);
+    const btn=document.getElementById('btn-copy'); const orig=btn.innerHTML;
+    btn.textContent='Copied!'; setTimeout(()=>{btn.innerHTML=orig;},2000);
   });
 });
 
 // ── SAVE TO MILEAGE LOG ──
 document.getElementById('btn-save-run').addEventListener('click', () => {
   if (!currentResult) return;
-  const totalDist = currentResult.runs.reduce((a,r) => {
-    let d = r.stops.reduce((s,st)=>s+st.leg.distKm,0);
-    if (r.returnLeg) d+=r.returnLeg.distKm;
-    return a+d;
-  },0);
-  const totalDrive = currentResult.runs.reduce((a,r) => {
-    let d = r.stops.reduce((s,st)=>s+st.leg.durMins,0);
-    if (r.returnLeg) d+=r.returnLeg.durMins;
-    return a+d;
-  },0);
-  const allStops = currentResult.runs.flatMap(r=>r.stops);
-  const record = {
-    id: Date.now(),
-    date: new Date().toISOString(),
-    startPc: currentResult.startPc,
-    stops: allStops.map(s=>({ postcode:s.postcode, label:s.label })),
-    totalDistKm: totalDist,
-    totalDriveMins: totalDrive,
-    vanCount: currentResult.vanCount,
-    returnToWh: currentResult.returnToWh,
-    departTime: currentResult.departTime
-  };
-  const log = getLog();
-  log.push(record);
-  saveLog(log);
-  const btn = document.getElementById('btn-save-run');
-  const orig = btn.innerHTML;
-  btn.textContent = 'Saved!';
-  setTimeout(()=>{ btn.innerHTML=orig; }, 2000);
+  const totalDist=currentResult.runs.reduce((a,r)=>{let d=r.stops.reduce((s,st)=>s+st.leg.distKm,0);if(r.returnLeg)d+=r.returnLeg.distKm;return a+d;},0);
+  const totalDrive=currentResult.runs.reduce((a,r)=>{let d=r.stops.reduce((s,st)=>s+st.leg.durMins,0);if(r.returnLeg)d+=r.returnLeg.durMins;return a+d;},0);
+  const allStops=currentResult.runs.flatMap(r=>r.stops);
+  const record={ id:Date.now(), date:new Date().toISOString(), startPc:currentResult.startPc, stops:allStops.map(s=>({postcode:s.postcode})), totalDistKm:totalDist, totalDriveMins:totalDrive, vanCount:currentResult.vanCount, returnToWh:currentResult.returnToWh, departTime:currentResult.departTime };
+  const log=getLog(); log.push(record); saveLog(log);
+  const btn=document.getElementById('btn-save-run'); const orig=btn.innerHTML;
+  btn.textContent='Saved!'; setTimeout(()=>{btn.innerHTML=orig;},2000);
 });
 
 // ── SAVE AS NAMED ROUTE ──
 document.getElementById('btn-save-route').addEventListener('click', () => {
   if (!currentResult) return;
-  showModal('Save route', `
-    <div class="section-label" style="margin-bottom:8px;">Route name</div>
-    <input type="text" id="route-name-input" placeholder="e.g. Monday run, Ayr drops" autocomplete="off">
-  `, [
-    { label:'Cancel', fn: closeModal, style:'background:var(--surface);border:1px solid var(--border);color:var(--text);' },
-    { label:'Save', fn: () => {
-      const name = document.getElementById('route-name-input').value.trim();
+  showModal('Save route', `<div class="section-label" style="margin-bottom:8px;">Route name</div><input type="text" id="route-name-input" placeholder="e.g. Monday run, Ayr drops" autocomplete="off">`, [
+    { label:'Cancel', fn:closeModal, style:'background:var(--surface);border:1px solid var(--border);color:var(--text);' },
+    { label:'Save', fn:()=>{
+      const name=document.getElementById('route-name-input').value.trim();
       if (!name) return;
-      const routes = getSavedRoutes();
-      const rows = Array.from(stopsContainer.querySelectorAll('.field-row'));
-      const stops = rows.map(r=>({
-        postcode: normPC(r.querySelector('.stop-postcode').value),
-        label: r.querySelector('.stop-label').value.trim()
-      })).filter(s=>s.postcode);
-      routes.push({ id:Date.now(), name, stops, savedAt:new Date().toISOString() });
-      setSavedRoutes(routes);
-      closeModal();
+      const routes=getSavedRoutes();
+      const rows=Array.from(stopsContainer.querySelectorAll('.field-row'));
+      const stops=rows.map(r=>({postcode:normPC(r.querySelector('.stop-postcode').value)})).filter(s=>s.postcode);
+      routes.push({id:Date.now(),name,stops,savedAt:new Date().toISOString()});
+      setSavedRoutes(routes); closeModal();
     }, style:'background:var(--accent);color:#0f0f1a;border:none;' }
   ]);
-  setTimeout(()=>{ const el=document.getElementById('route-name-input'); if(el) el.focus(); },100);
+  setTimeout(()=>{ const el=document.getElementById('route-name-input'); if(el)el.focus(); },100);
 });
 
 // ── RESET ──
 document.getElementById('btn-reset').addEventListener('click', () => {
-  stopsContainer.innerHTML = ''; stopCount=0;
+  stopsContainer.innerHTML=''; stopCount=0;
   addStop(); addStop(); addStop();
-  document.getElementById('results').style.display = 'none';
+  document.getElementById('results').style.display='none';
   document.getElementById('van-tabs').classList.remove('visible');
-  document.getElementById('depart-time').value = '08:00';
-  document.getElementById('van-count').value = '1';
-  document.getElementById('return-to-wh').checked = false;
-  currentResult = null;
-  setStatus('');
-  window.scrollTo({ top:0, behavior:'smooth' });
+  document.getElementById('depart-time').value='08:00';
+  document.getElementById('van-count').value='1';
+  document.getElementById('return-to-wh').checked=false;
+  currentResult=null; setStatus('');
+  window.scrollTo({top:0,behavior:'smooth'});
 });
 
-// ── STORAGE HELPERS ──
-const LOG_KEY = 'haul_log_v1';
-const ROUTES_KEY = 'haul_routes_v1';
-const EXPIRY_DAYS = 90;
-
-function getLog() {
-  try {
-    const raw = localStorage.getItem(LOG_KEY);
-    if (!raw) return [];
-    const cutoff = Date.now() - EXPIRY_DAYS * 86400000;
-    return JSON.parse(raw).filter(r => new Date(r.date).getTime() > cutoff);
-  } catch { return []; }
-}
-function saveLog(log) { try { localStorage.setItem(LOG_KEY, JSON.stringify(log)); } catch {} }
-
-function getSavedRoutes() { try { return JSON.parse(localStorage.getItem(ROUTES_KEY)||'[]'); } catch { return []; } }
-function setSavedRoutes(r) { try { localStorage.setItem(ROUTES_KEY, JSON.stringify(r)); } catch {} }
+// ── STORAGE ──
+const LOG_KEY='haul_log_v1', ROUTES_KEY='haul_routes_v1', EXPIRY_DAYS=90;
+function getLog() { try { const raw=localStorage.getItem(LOG_KEY); if(!raw)return[]; const cutoff=Date.now()-EXPIRY_DAYS*86400000; return JSON.parse(raw).filter(r=>new Date(r.date).getTime()>cutoff); } catch{return[];} }
+function saveLog(log) { try{localStorage.setItem(LOG_KEY,JSON.stringify(log));}catch{} }
+function getSavedRoutes() { try{return JSON.parse(localStorage.getItem(ROUTES_KEY)||'[]');}catch{return[];} }
+function setSavedRoutes(r) { try{localStorage.setItem(ROUTES_KEY,JSON.stringify(r));}catch{} }
 
 // ── RENDER SAVED ROUTES ──
 function renderSavedRoutes() {
-  const container = document.getElementById('saved-routes-list');
-  const routes = getSavedRoutes();
-  if (!routes.length) {
-    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>No saved routes yet.<br>Optimise a route and hit "Save as route" to store it here.</p></div>';
-    return;
-  }
-  container.innerHTML = '';
+  const container=document.getElementById('saved-routes-list');
+  const routes=getSavedRoutes();
+  if (!routes.length) { container.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><p>No saved routes yet.<br>Optimise a route and hit "Save as route".</p></div>'; return; }
+  container.innerHTML='';
   routes.forEach(route => {
-    const card = document.createElement('div');
-    card.className = 'saved-route-card';
-    card.innerHTML = `
-      <div class="saved-route-info">
-        <div class="saved-route-name">${route.name}</div>
-        <div class="saved-route-meta">${route.stops.length} stop${route.stops.length!==1?'s':''} · Saved ${new Date(route.savedAt).toLocaleDateString('en-GB')}</div>
-      </div>
-      <div class="saved-route-actions">
-        <button class="btn-small primary" data-id="${route.id}">Load</button>
-        <button class="btn-small danger" data-del="${route.id}">Delete</button>
-      </div>
-    `;
-    card.querySelector('[data-id]').addEventListener('click', () => loadSavedRoute(route));
-    card.querySelector('[data-del]').addEventListener('click', () => {
-      const updated = getSavedRoutes().filter(r=>r.id!==route.id);
-      setSavedRoutes(updated);
-      renderSavedRoutes();
-    });
+    const card=document.createElement('div'); card.className='saved-route-card';
+    card.innerHTML=`<div class="saved-route-info"><div class="saved-route-name">${route.name}</div><div class="saved-route-meta">${route.stops.length} stop${route.stops.length!==1?'s':''} · Saved ${new Date(route.savedAt).toLocaleDateString('en-GB')}</div></div><div class="saved-route-actions"><button class="btn-small primary" data-id="${route.id}">Load</button><button class="btn-small danger" data-del="${route.id}">Delete</button></div>`;
+    card.querySelector('[data-id]').addEventListener('click',()=>loadSavedRoute(route));
+    card.querySelector('[data-del]').addEventListener('click',()=>{setSavedRoutes(getSavedRoutes().filter(r=>r.id!==route.id));renderSavedRoutes();});
     container.appendChild(card);
   });
 }
 
 function loadSavedRoute(route) {
-  stopsContainer.innerHTML = ''; stopCount=0;
-  route.stops.forEach(s => addStop(s.postcode, s.label));
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab==='planner'));
-  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active', p.id==='planner-page'));
-  window.scrollTo({ top:0, behavior:'smooth' });
+  stopsContainer.innerHTML=''; stopCount=0;
+  route.stops.forEach(s=>addStop(s.postcode));
+  showPage('planner');
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
 // ── RENDER HISTORY ──
 function renderHistory() {
-  const log = getLog();
-  const filterEl = document.getElementById('history-filter-month');
-
-  // Populate month filter
-  const months = [...new Set(log.map(r => r.date.slice(0,7)))].sort().reverse();
-  filterEl.innerHTML = '<option value="all">All time (90 days)</option>';
-  months.forEach(m => {
-    const [y,mo] = m.split('-');
-    const label = new Date(y,mo-1,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
-    filterEl.innerHTML += `<option value="${m}">${label}</option>`;
-  });
-
-  const render = () => {
-    const filter = filterEl.value;
-    const filtered = filter==='all' ? log : log.filter(r=>r.date.startsWith(filter));
-    renderHistoryList(filtered);
-  };
-
-  filterEl.onchange = render;
-  render();
+  const log=getLog(); const filterEl=document.getElementById('history-filter-month');
+  const months=[...new Set(log.map(r=>r.date.slice(0,7)))].sort().reverse();
+  filterEl.innerHTML='<option value="all">All time (90 days)</option>';
+  months.forEach(m=>{ const[y,mo]=m.split('-'); filterEl.innerHTML+=`<option value="${m}">${new Date(y,mo-1,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'})}</option>`; });
+  const render=()=>{ const f=filterEl.value; renderHistoryList(f==='all'?log:log.filter(r=>r.date.startsWith(f))); };
+  filterEl.onchange=render; render();
 }
 
 function renderHistoryList(records) {
-  const container = document.getElementById('history-list');
-  const summaryEl = document.getElementById('mileage-summary-bar');
-
-  if (!records.length) {
-    summaryEl.innerHTML = '';
-    container.innerHTML = '<div class="empty-state"><div class="empty-icon">🚐</div><p>No runs logged yet.<br>After optimising a route, hit "Save to mileage log".</p></div>';
-    return;
-  }
-
-  const totalDist = records.reduce((a,r)=>a+r.totalDistKm,0);
-  const totalRuns = records.length;
-  const totalStops = records.reduce((a,r)=>a+r.stops.length,0);
-
-  summaryEl.innerHTML = `
-    <div><div class="mileage-stat-label">Total distance</div><div class="mileage-stat-value">${totalDist.toFixed(1)} km</div></div>
-    <div><div class="mileage-stat-label">Runs</div><div class="mileage-stat-value">${totalRuns}</div></div>
-    <div><div class="mileage-stat-label">Stops</div><div class="mileage-stat-value">${totalStops}</div></div>
-  `;
-
-  const sorted = [...records].sort((a,b)=>new Date(b.date)-new Date(a.date));
-  container.innerHTML = '';
-  sorted.forEach(r => {
-    const card = document.createElement('div');
-    card.className = 'history-card';
-    const d = new Date(r.date);
-    const stopList = r.stops.map(s=>s.label||s.postcode).join(' → ');
-    card.innerHTML = `
-      <div class="history-card-header">
-        <div>
-          <div class="history-stops">${r.stops.length} stop${r.stops.length!==1?'s':''}${r.vanCount>1?` · ${r.vanCount} vans`:''}${r.returnToWh?' · returned':''}</div>
-          <div class="history-date">${d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}${r.departTime?' · Departed '+r.departTime:''}</div>
-        </div>
-        <div class="history-dist">${r.totalDistKm.toFixed(1)} km</div>
-      </div>
-      <div class="history-stops-list">${stopList}</div>
-    `;
+  const container=document.getElementById('history-list'), summaryEl=document.getElementById('mileage-summary-bar');
+  if (!records.length) { summaryEl.innerHTML=''; container.innerHTML='<div class="empty-state"><div class="empty-icon">🚐</div><p>No runs logged yet.<br>After optimising, hit "Save to mileage log".</p></div>'; return; }
+  const totalDist=records.reduce((a,r)=>a+r.totalDistKm,0);
+  summaryEl.innerHTML=`<div><div class="mileage-stat-label">Total distance</div><div class="mileage-stat-value">${fmtDist(totalDist)}</div></div><div><div class="mileage-stat-label">Runs</div><div class="mileage-stat-value">${records.length}</div></div><div><div class="mileage-stat-label">Stops</div><div class="mileage-stat-value">${records.reduce((a,r)=>a+r.stops.length,0)}</div></div>`;
+  container.innerHTML='';
+  [...records].sort((a,b)=>new Date(b.date)-new Date(a.date)).forEach(r=>{
+    const card=document.createElement('div'); card.className='history-card';
+    const d=new Date(r.date);
+    card.innerHTML=`<div class="history-card-header"><div><div class="history-stops">${r.stops.length} stop${r.stops.length!==1?'s':''}${r.vanCount>1?` · ${r.vanCount} vans`:''}${r.returnToWh?' · returned':''}</div><div class="history-date">${d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}${r.departTime?' · Departed '+r.departTime:''}</div></div><div class="history-dist">${fmtDist(r.totalDistKm)}</div></div><div class="history-stops-list">${r.stops.map(s=>s.postcode).join(' → ')}</div>`;
     container.appendChild(card);
   });
 }
 
 // ── EXPORT CSV ──
 document.getElementById('btn-export-csv').addEventListener('click', () => {
-  const filter = document.getElementById('history-filter-month').value;
-  const log = getLog();
-  const records = filter==='all' ? log : log.filter(r=>r.date.startsWith(filter));
+  const filter=document.getElementById('history-filter-month').value;
+  const log=getLog(); const records=filter==='all'?log:log.filter(r=>r.date.startsWith(filter));
   if (!records.length) return;
-
-  const rows = [['Date','Departure','Stops','Postcodes','Distance (km)','Drive time (mins)','Vans','Return to warehouse']];
-  records.sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(r => {
-    rows.push([
-      new Date(r.date).toLocaleDateString('en-GB'),
-      r.departTime||'',
-      r.stops.length,
-      r.stops.map(s=>s.postcode).join(', '),
-      r.totalDistKm.toFixed(2),
-      Math.round(r.totalDriveMins),
-      r.vanCount||1,
-      r.returnToWh?'Yes':'No'
-    ]);
+  const distCol=useKm?'Distance (km)':'Distance (mi)';
+  const rows=[['Date','Departure','Stops','Postcodes',distCol,'Drive time (mins)','Vans','Return to warehouse']];
+  records.sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(r=>{
+    rows.push([new Date(r.date).toLocaleDateString('en-GB'),r.departTime||'',r.stops.length,r.stops.map(s=>s.postcode).join(', '),(useKm?r.totalDistKm:(r.totalDistKm*KM_TO_MI)).toFixed(2),Math.round(r.totalDriveMins),r.vanCount||1,r.returnToWh?'Yes':'No']);
   });
-
-  const csv = rows.map(r => r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv], { type:'text/csv' });
-  const a = Object.assign(document.createElement('a'), { href:URL.createObjectURL(blob), download:`haul-mileage-${new Date().toISOString().slice(0,10)}.csv` });
+  const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv'})),download:`haul-mileage-${new Date().toISOString().slice(0,10)}.csv`});
   a.click();
 });
 
 // ── CLEAR HISTORY ──
 document.getElementById('btn-clear-history').addEventListener('click', () => {
-  showModal('Clear mileage log', '<p style="color:var(--muted);font-size:14px;">This will permanently delete all run history. It cannot be undone.</p>', [
-    { label:'Cancel', fn:closeModal, style:'background:var(--surface);border:1px solid var(--border);color:var(--text);' },
-    { label:'Clear all', fn:()=>{ saveLog([]); closeModal(); renderHistory(); }, style:'background:var(--danger);color:#fff;border:none;' }
+  showModal('Clear mileage log','<p style="color:var(--muted);font-size:14px;">This will permanently delete all run history.</p>',[
+    {label:'Cancel',fn:closeModal,style:'background:var(--surface);border:1px solid var(--border);color:var(--text);'},
+    {label:'Clear all',fn:()=>{saveLog([]);closeModal();renderHistory();},style:'background:var(--danger);color:#fff;border:none;'}
   ]);
 });
 
 // ── MODAL ──
-function showModal(title, bodyHtml, actions) {
-  document.getElementById('modal-title').textContent = title;
-  document.getElementById('modal-body').innerHTML = bodyHtml;
-  const actionsEl = document.getElementById('modal-actions');
-  actionsEl.innerHTML = '';
-  actions.forEach(a => {
-    const btn = document.createElement('button');
-    btn.className = 'btn-primary';
-    btn.textContent = a.label;
-    btn.style.cssText = a.style||'';
-    btn.addEventListener('click', a.fn);
-    actionsEl.appendChild(btn);
-  });
+function showModal(title,bodyHtml,actions) {
+  document.getElementById('modal-title').textContent=title;
+  document.getElementById('modal-body').innerHTML=bodyHtml;
+  const actionsEl=document.getElementById('modal-actions'); actionsEl.innerHTML='';
+  actions.forEach(a=>{const btn=document.createElement('button');btn.className='btn-primary';btn.textContent=a.label;btn.style.cssText=a.style||'';btn.addEventListener('click',a.fn);actionsEl.appendChild(btn);});
   document.getElementById('modal-overlay').classList.add('active');
 }
 function closeModal() { document.getElementById('modal-overlay').classList.remove('active'); }
-document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target===document.getElementById('modal-overlay')) closeModal(); });
+document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('modal-overlay'))closeModal();});
 
 // ── EASTER EGG ──
 (function() {
-  const title=document.getElementById('app-title'), overlay=document.getElementById('egg-overlay'),
-    canvas=document.getElementById('egg-canvas'), ctx=canvas.getContext('2d'),
+  const title=document.getElementById('app-title'),overlay=document.getElementById('egg-overlay'),
+    canvas=document.getElementById('egg-canvas'),ctx=canvas.getContext('2d'),
     closeBtn=document.getElementById('egg-close');
-  let tapCount=0, tapTimer=null, raf=null, active=false;
-
-  title.addEventListener('click', () => {
-    tapCount++; clearTimeout(tapTimer);
-    tapTimer=setTimeout(()=>{tapCount=0;},1400);
-    if (tapCount>=7) { tapCount=0; launchGame(); }
-  });
-  closeBtn.addEventListener('click', stopGame);
-  document.addEventListener('keydown', e => { if(e.key==='Escape'&&active) stopGame(); });
-
+  let tapCount=0,tapTimer=null,raf=null,active=false;
+  title.addEventListener('click',()=>{tapCount++;clearTimeout(tapTimer);tapTimer=setTimeout(()=>{tapCount=0;},1400);if(tapCount>=7){tapCount=0;launchGame();}});
+  closeBtn.addEventListener('click',stopGame);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&active)stopGame();});
   const W=480,H=320,GROUND=230,ROAD_TOP=170,ROAD_BOT=280;
   let score,lives,speed,frameCount,player,packages,houses,obstacles,particles,keys={};
-
   document.addEventListener('keydown',e=>{if(active)keys[e.code]=true;});
   document.addEventListener('keyup',e=>{keys[e.code]=false;});
   let tSX=0;
   canvas.addEventListener('touchstart',e=>{tSX=e.touches[0].clientX;});
   canvas.addEventListener('touchend',e=>{if(!active)return;if(Math.abs(e.changedTouches[0].clientX-tSX)<30)throwPkg();});
-
-  function launchGame() { resetGame(); overlay.classList.add('active'); active=true; raf=requestAnimationFrame(loop); }
-  function stopGame() { active=false; overlay.classList.remove('active'); if(raf){cancelAnimationFrame(raf);raf=null;} keys={}; }
-  function resetGame() {
-    score=0;lives=3;speed=2.2;frameCount=0;
-    player={x:80,y:GROUND-28,w:28,h:28,vy:0,onGround:true,throwing:false};
-    packages=[];houses=[];obstacles=[];particles=[];
-    updateHUD();
-    for(let i=0;i<4;i++) spawnHouse(W+i*220+80);
-    spawnObstacle(W+300);
-  }
-  function updateHUD() { document.getElementById('egg-score').textContent=score; document.getElementById('egg-lives').textContent=lives; }
-  function spawnHouse(x) { houses.push({x,y:ROAD_TOP-60,w:56,h:60,delivered:false,flashTimer:0}); }
-  function spawnObstacle(x) { obstacles.push({x,y:GROUND-18,w:20,h:18}); }
-  function throwPkg() { if(!active)return; packages.push({x:player.x+24,y:player.y+8,vx:speed+4,vy:-3,w:10,h:8}); player.throwing=true; setTimeout(()=>{player.throwing=false;},180); }
-  function spawnParticles(x,y,color) { for(let i=0;i<10;i++) particles.push({x,y,vx:(Math.random()-.5)*4,vy:(Math.random()-.5)*4-2,s:Math.random()*5+2,color,life:30,maxLife:30}); }
-
-  function drawSky() { const g=ctx.createLinearGradient(0,0,0,ROAD_TOP); g.addColorStop(0,'#0a0a1a'); g.addColorStop(1,'#1a2040'); ctx.fillStyle=g; ctx.fillRect(0,0,W,ROAD_TOP); ctx.fillStyle='#fff'; for(let i=0;i<30;i++) ctx.fillRect((i*137+frameCount*.3)%W,(i*73)%(ROAD_TOP-10),i%3===0?2:1,i%3===0?2:1); }
-  function drawRoad() { ctx.fillStyle='#2a2a3a'; ctx.fillRect(0,ROAD_TOP,W,ROAD_BOT-ROAD_TOP); ctx.fillStyle='#888'; ctx.fillRect(0,ROAD_TOP,W,4); ctx.fillRect(0,ROAD_BOT,W,4); ctx.fillStyle='#555'; const off=(frameCount*speed)%68; for(let x=-40+off;x<W+40;x+=68) ctx.fillRect(x,(ROAD_TOP+ROAD_BOT)/2-2,28,4); ctx.fillStyle='#3a3a2a'; ctx.fillRect(0,ROAD_BOT,W,H-ROAD_BOT); }
-  function drawHouse(h) { const f=h.flashTimer>0; ctx.fillStyle=f?'#f0c040':'#3a4060'; ctx.fillRect(h.x,h.y+24,h.w,h.h-24); ctx.fillStyle=f?'#ffdd20':'#c0392b'; ctx.beginPath(); ctx.moveTo(h.x-4,h.y+24); ctx.lineTo(h.x+h.w/2,h.y); ctx.lineTo(h.x+h.w+4,h.y+24); ctx.closePath(); ctx.fill(); ctx.fillStyle='#1a1a2e'; ctx.fillRect(h.x+h.w/2-6,h.y+h.h-18,12,18); ctx.fillStyle=f?'#fff':'#f0c040'; ctx.fillRect(h.x+6,h.y+30,12,10); if(!h.delivered){ctx.fillStyle='#f0c040';ctx.fillRect(h.x+h.w/2-8,h.y+h.h-10,16,4);} }
-  function drawPlayer() { const p=player; ctx.fillStyle='#f0c040'; ctx.fillRect(p.x+4,p.y+14,20,8); ctx.fillStyle='#e8e8f0'; ctx.beginPath(); ctx.arc(p.x+7,p.y+24,6,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(p.x+21,p.y+24,6,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#1a1a2e'; ctx.beginPath(); ctx.arc(p.x+7,p.y+24,2,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(p.x+21,p.y+24,2,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#f5cba7'; ctx.beginPath(); ctx.arc(p.x+16,p.y+6,7,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#e05a2b'; ctx.beginPath(); ctx.arc(p.x+16,p.y+4,7,Math.PI,0); ctx.fill(); if(p.throwing){ctx.fillStyle='#f5cba7';ctx.fillRect(p.x+20,p.y+10,10,4);} ctx.fillStyle='#555'; ctx.fillRect(p.x-2,p.y+10,8,10); }
-  function drawPackage(pkg) { ctx.fillStyle='#f0c040'; ctx.fillRect(pkg.x,pkg.y,pkg.w,pkg.h); ctx.strokeStyle='#e05a2b'; ctx.lineWidth=1.5; ctx.strokeRect(pkg.x,pkg.y,pkg.w,pkg.h); ctx.beginPath(); ctx.moveTo(pkg.x+pkg.w/2,pkg.y); ctx.lineTo(pkg.x+pkg.w/2,pkg.y+pkg.h); ctx.stroke(); ctx.lineWidth=1; }
-  function drawObstacle(o) { ctx.fillStyle='#e05a2b'; ctx.beginPath(); ctx.moveTo(o.x+o.w/2,o.y); ctx.lineTo(o.x+o.w,o.y+o.h); ctx.lineTo(o.x,o.y+o.h); ctx.closePath(); ctx.fill(); ctx.fillStyle='#fff'; ctx.fillRect(o.x+4,o.y+o.h*.4,o.w-8,3); ctx.fillStyle='#2a2a2a'; ctx.fillRect(o.x,o.y+o.h,o.w,3); }
-
-  function gameOver() {
-    ctx.fillStyle='rgba(0,0,0,0.7)'; ctx.fillRect(0,0,W,H);
-    ctx.textAlign='center';
-    ctx.fillStyle='#f0c040'; ctx.font='bold 32px monospace'; ctx.fillText('GAME OVER',W/2,H/2-20);
-    ctx.fillStyle='#e8e8f0'; ctx.font='18px monospace'; ctx.fillText(`Score: ${score}`,W/2,H/2+14);
-    ctx.fillStyle='#888'; ctx.font='13px monospace'; ctx.fillText('Click to restart  ·  ESC to quit',W/2,H/2+40);
-    ctx.textAlign='left'; active=false;
-    canvas.onclick=()=>{canvas.onclick=null;resetGame();active=true;raf=requestAnimationFrame(loop);};
-  }
-
-  function loop() {
-    if(!active) return;
-    frameCount++;
-    ctx.clearRect(0,0,W,H);
-    drawSky(); drawRoad();
-    if(frameCount%600===0) speed=Math.min(speed+0.2,5);
+  function launchGame(){resetGame();overlay.classList.add('active');active=true;raf=requestAnimationFrame(loop);}
+  function stopGame(){active=false;overlay.classList.remove('active');if(raf){cancelAnimationFrame(raf);raf=null;}keys={};}
+  function resetGame(){score=0;lives=3;speed=2.2;frameCount=0;player={x:80,y:GROUND-28,w:28,h:28,vy:0,onGround:true,throwing:false};packages=[];houses=[];obstacles=[];particles=[];updateHUD();for(let i=0;i<4;i++)spawnHouse(W+i*220+80);spawnObstacle(W+300);}
+  function updateHUD(){document.getElementById('egg-score').textContent=score;document.getElementById('egg-lives').textContent=lives;}
+  function spawnHouse(x){houses.push({x,y:ROAD_TOP-60,w:56,h:60,delivered:false,flashTimer:0});}
+  function spawnObstacle(x){obstacles.push({x,y:GROUND-18,w:20,h:18});}
+  function throwPkg(){if(!active)return;packages.push({x:player.x+24,y:player.y+8,vx:speed+4,vy:-3,w:10,h:8});player.throwing=true;setTimeout(()=>{player.throwing=false;},180);}
+  function spawnParticles(x,y,color){for(let i=0;i<10;i++)particles.push({x,y,vx:(Math.random()-.5)*4,vy:(Math.random()-.5)*4-2,s:Math.random()*5+2,color,life:30,maxLife:30});}
+  function drawSky(){const g=ctx.createLinearGradient(0,0,0,ROAD_TOP);g.addColorStop(0,'#0a0a1a');g.addColorStop(1,'#1a2040');ctx.fillStyle=g;ctx.fillRect(0,0,W,ROAD_TOP);ctx.fillStyle='#fff';for(let i=0;i<30;i++)ctx.fillRect((i*137+frameCount*.3)%W,(i*73)%(ROAD_TOP-10),i%3===0?2:1,i%3===0?2:1);}
+  function drawRoad(){ctx.fillStyle='#2a2a3a';ctx.fillRect(0,ROAD_TOP,W,ROAD_BOT-ROAD_TOP);ctx.fillStyle='#888';ctx.fillRect(0,ROAD_TOP,W,4);ctx.fillRect(0,ROAD_BOT,W,4);ctx.fillStyle='#555';const off=(frameCount*speed)%68;for(let x=-40+off;x<W+40;x+=68)ctx.fillRect(x,(ROAD_TOP+ROAD_BOT)/2-2,28,4);ctx.fillStyle='#3a3a2a';ctx.fillRect(0,ROAD_BOT,W,H-ROAD_BOT);}
+  function drawHouse(h){const f=h.flashTimer>0;ctx.fillStyle=f?'#f0c040':'#3a4060';ctx.fillRect(h.x,h.y+24,h.w,h.h-24);ctx.fillStyle=f?'#ffdd20':'#c0392b';ctx.beginPath();ctx.moveTo(h.x-4,h.y+24);ctx.lineTo(h.x+h.w/2,h.y);ctx.lineTo(h.x+h.w+4,h.y+24);ctx.closePath();ctx.fill();ctx.fillStyle='#1a1a2e';ctx.fillRect(h.x+h.w/2-6,h.y+h.h-18,12,18);ctx.fillStyle=f?'#fff':'#f0c040';ctx.fillRect(h.x+6,h.y+30,12,10);if(!h.delivered){ctx.fillStyle='#f0c040';ctx.fillRect(h.x+h.w/2-8,h.y+h.h-10,16,4);}}
+  function drawPlayer(){const p=player;ctx.fillStyle='#f0c040';ctx.fillRect(p.x+4,p.y+14,20,8);ctx.fillStyle='#e8e8f0';ctx.beginPath();ctx.arc(p.x+7,p.y+24,6,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(p.x+21,p.y+24,6,0,Math.PI*2);ctx.fill();ctx.fillStyle='#1a1a2e';ctx.beginPath();ctx.arc(p.x+7,p.y+24,2,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(p.x+21,p.y+24,2,0,Math.PI*2);ctx.fill();ctx.fillStyle='#f5cba7';ctx.beginPath();ctx.arc(p.x+16,p.y+6,7,0,Math.PI*2);ctx.fill();ctx.fillStyle='#e05a2b';ctx.beginPath();ctx.arc(p.x+16,p.y+4,7,Math.PI,0);ctx.fill();if(p.throwing){ctx.fillStyle='#f5cba7';ctx.fillRect(p.x+20,p.y+10,10,4);}ctx.fillStyle='#555';ctx.fillRect(p.x-2,p.y+10,8,10);}
+  function drawPackage(pkg){ctx.fillStyle='#f0c040';ctx.fillRect(pkg.x,pkg.y,pkg.w,pkg.h);ctx.strokeStyle='#e05a2b';ctx.lineWidth=1.5;ctx.strokeRect(pkg.x,pkg.y,pkg.w,pkg.h);ctx.beginPath();ctx.moveTo(pkg.x+pkg.w/2,pkg.y);ctx.lineTo(pkg.x+pkg.w/2,pkg.y+pkg.h);ctx.stroke();ctx.lineWidth=1;}
+  function drawObstacle(o){ctx.fillStyle='#e05a2b';ctx.beginPath();ctx.moveTo(o.x+o.w/2,o.y);ctx.lineTo(o.x+o.w,o.y+o.h);ctx.lineTo(o.x,o.y+o.h);ctx.closePath();ctx.fill();ctx.fillStyle='#fff';ctx.fillRect(o.x+4,o.y+o.h*.4,o.w-8,3);ctx.fillStyle='#2a2a2a';ctx.fillRect(o.x,o.y+o.h,o.w,3);}
+  function gameOver(){ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(0,0,W,H);ctx.textAlign='center';ctx.fillStyle='#f0c040';ctx.font='bold 32px monospace';ctx.fillText('GAME OVER',W/2,H/2-20);ctx.fillStyle='#e8e8f0';ctx.font='18px monospace';ctx.fillText(`Score: ${score}`,W/2,H/2+14);ctx.fillStyle='#888';ctx.font='13px monospace';ctx.fillText('Click to restart  ·  ESC to quit',W/2,H/2+40);ctx.textAlign='left';active=false;canvas.onclick=()=>{canvas.onclick=null;resetGame();active=true;raf=requestAnimationFrame(loop);};}
+  function loop(){
+    if(!active)return;frameCount++;ctx.clearRect(0,0,W,H);drawSky();drawRoad();
+    if(frameCount%600===0)speed=Math.min(speed+0.2,5);
     houses.forEach(h=>{h.x-=speed;if(h.flashTimer>0)h.flashTimer--;drawHouse(h);});
     houses=houses.filter(h=>h.x>-100);
-    if(!houses.length||houses[houses.length-1].x<W-160) spawnHouse(W+60+Math.random()*120);
+    if(!houses.length||houses[houses.length-1].x<W-160)spawnHouse(W+60+Math.random()*120);
     obstacles.forEach(o=>{o.x-=speed;drawObstacle(o);});
     obstacles=obstacles.filter(o=>o.x>-40);
     if(!obstacles.length||obstacles[obstacles.length-1].x<W-280){if(Math.random()<0.6)spawnObstacle(W+60+Math.random()*80);}
@@ -1123,8 +1124,7 @@ document.getElementById('modal-overlay').addEventListener('click', e => { if (e.
     packages=packages.filter(p=>!p.dead);
     const p=player;
     if(keys['ArrowUp']&&p.onGround){p.vy=-8;p.onGround=false;keys['ArrowUp']=false;}
-    p.vy+=0.5;p.y+=p.vy;
-    if(p.y>=GROUND-p.h){p.y=GROUND-p.h;p.vy=0;p.onGround=true;}
+    p.vy+=0.5;p.y+=p.vy;if(p.y>=GROUND-p.h){p.y=GROUND-p.h;p.vy=0;p.onGround=true;}
     ctx.save();particles.forEach(pt=>{ctx.globalAlpha=pt.life/pt.maxLife;ctx.fillStyle=pt.color;ctx.fillRect(pt.x,pt.y,pt.s,pt.s);pt.x+=pt.vx;pt.y+=pt.vy;pt.life--;});ctx.restore();
     particles=particles.filter(pt=>pt.life>0);
     drawPlayer();
