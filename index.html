@@ -1,4 +1,4 @@
-<!-- Haul v3.5.8 -->
+<!-- Haul v3.6.0 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -126,10 +126,6 @@
     .field-group { margin-bottom: 20px; }
     .field-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
     input[type="text"], input[type="time"], input[type="number"], select {
-      input[type="time"]::-webkit-calendar-picker-indicator {
-  filter: invert(0.6);
-  cursor: pointer;
-}
       background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 15px; padding: 10px 12px; outline: none; width: 100%; transition: border-color 0.15s; font-family: var(--font);
     }
     input:focus, select:focus { border-color: var(--accent); }
@@ -478,7 +474,7 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.5.8</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.6.0</span></div>
     <button id="btn-install">Install App</button>
   </header>
   <div id="ios-banner">To install Haul on your home screen: tap the Share button in Safari, then choose "Add to Home Screen".</div>
@@ -621,7 +617,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.5.8';
+const APP_VERSION = 'v3.6.0';
 
 // ── PWA MANIFEST ──
 (function() {
@@ -784,7 +780,7 @@ function rebuildVanLabels() {
     row.className = 'field-row';
     row.innerHTML = `
       <div style="font-size:12px;font-weight:700;color:var(--muted);width:44px;flex-shrink:0;">Van ${i+1}</div>
-      <input type="text" class="van-label-input" placeholder="e.g. Enter Reg Number" value="${existing[i]||''}" autocomplete="off" spellcheck="false" style="text-transform:uppercase;">
+      <input type="text" class="van-label-input" placeholder="Enter reg number" value="${existing[i]||''}" autocomplete="off" spellcheck="false" style="text-transform:uppercase;">
     `;
     row.querySelector('input').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase(); });
     vanLabelsContainer.appendChild(row);
@@ -1375,12 +1371,11 @@ async function showShareModalFromPayload(payload, label) {
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 5000);
-    const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longLink)}`, { signal: ctrl.signal });
+    const res = await fetch(`https://is.gd/create.php?format=simple&url=${encodeURIComponent(longLink)}`, { signal: ctrl.signal });
     clearTimeout(t);
     if (res.ok) {
       const s = (await res.text()).trim();
-      // Only accept a proper tinyurl short link — reject homepages, error pages, anything else
-      if (/^https:\/\/tinyurl\.com\/[a-z0-9]{4,}$/i.test(s)) finalLink = s;
+      if (/^https:\/\/is\.gd\/[A-Za-z0-9]{4,}$/.test(s)) finalLink = s;
     }
   } catch { /* fall back to long link silently */ }
 
@@ -1704,8 +1699,20 @@ document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.targe
   document.addEventListener('keydown',e=>{if(active)keys[e.code]=true;});
   document.addEventListener('keyup',e=>{keys[e.code]=false;});
   let tSX=0;
-  canvas.addEventListener('touchstart',e=>{tSX=e.touches[0].clientX;});
-  canvas.addEventListener('touchend',e=>{if(!active)return;if(Math.abs(e.changedTouches[0].clientX-tSX)<30)throwPkg();});
+  canvas.addEventListener('touchstart',e=>{tSX=e.touches[0].clientX;},{ passive:true });
+  canvas.addEventListener('touchend',e=>{
+    if(!active)return;
+    const x = e.changedTouches[0].clientX;
+    const rect = canvas.getBoundingClientRect();
+    const relX = (x - rect.left) / rect.width;
+    if (relX < 0.5) {
+      // Left half = jump
+      if (player.onGround) { player.vy=-8; player.onGround=false; }
+    } else {
+      // Right half = throw
+      throwPkg();
+    }
+  });
   function launchGame(){resetGame();overlay.classList.add('active');active=true;raf=requestAnimationFrame(loop);}
   function stopGame(){active=false;overlay.classList.remove('active');if(raf){cancelAnimationFrame(raf);raf=null;}keys={};}
   function resetGame(){score=0;lives=3;speed=2.2;frameCount=0;player={x:80,y:GROUND-28,w:28,h:28,vy:0,onGround:true,throwing:false};packages=[];houses=[];obstacles=[];particles=[];updateHUD();for(let i=0;i<4;i++)spawnHouse(W+i*220+80);spawnObstacle(W+300);}
@@ -1794,7 +1801,11 @@ document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.targe
       let dead=false;
       obstacles.forEach(o=>{if(p.x+22>o.x&&p.x+6<o.x+o.w&&p.y+p.h>o.y&&p.y<o.y+o.h){lives--;updateHUD();spawnParticles(p.x+14,p.y+14,'#e05a2b');o.x=-200;if(lives<=0)dead=true;}});
       if(dead){gameOver();return;}
-      ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(0,H-28,W,28);ctx.fillStyle='#888899';ctx.font='11px monospace';ctx.fillText('SPACE = throw  ·  UP = jump  ·  ESC = quit',10,H-10);
+      const isTouchDevice = ('ontouchstart' in window);
+      const hudText = isTouchDevice
+        ? 'TAP LEFT = jump  ·  TAP RIGHT = throw  ·  ✕ = quit'
+        : 'SPACE = throw  ·  UP = jump  ·  ESC = quit';
+      ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(0,H-28,W,28);ctx.fillStyle='#888899';ctx.font='11px monospace';ctx.fillText(hudText,10,H-10);
       raf=requestAnimationFrame(loop);
     } catch(err) {
       // Surface error on canvas so it's visible
