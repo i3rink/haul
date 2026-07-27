@@ -126,6 +126,10 @@
     .field-group { margin-bottom: 20px; }
     .field-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
     input[type="text"], input[type="time"], input[type="number"], select {
+      input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.6);
+  cursor: pointer;
+}
       background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 15px; padding: 10px 12px; outline: none; width: 100%; transition: border-color 0.15s; font-family: var(--font);
     }
     input:focus, select:focus { border-color: var(--accent); }
@@ -780,7 +784,7 @@ function rebuildVanLabels() {
     row.className = 'field-row';
     row.innerHTML = `
       <div style="font-size:12px;font-weight:700;color:var(--muted);width:44px;flex-shrink:0;">Van ${i+1}</div>
-      <input type="text" class="van-label-input" placeholder="e.g. YH61 WFG" value="${existing[i]||''}" autocomplete="off" spellcheck="false" style="text-transform:uppercase;">
+      <input type="text" class="van-label-input" placeholder="e.g. Enter Reg Number" value="${existing[i]||''}" autocomplete="off" spellcheck="false" style="text-transform:uppercase;">
     `;
     row.querySelector('input').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase(); });
     vanLabelsContainer.appendChild(row);
