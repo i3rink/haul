@@ -1,4 +1,4 @@
-<!-- Haul v3.6.0 -->
+<!-- Haul v3.6.1 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -474,7 +474,7 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.6.0</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.6.1</span></div>
     <button id="btn-install">Install App</button>
   </header>
   <div id="ios-banner">To install Haul on your home screen: tap the Share button in Safari, then choose "Add to Home Screen".</div>
@@ -617,7 +617,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.6.0';
+const APP_VERSION = 'v3.6.1';
 
 // ── PWA MANIFEST ──
 (function() {
@@ -991,12 +991,14 @@ function renderResults({ runs, startPc, departTime, returnToWh, usingFallback, v
     splitBoard.classList.remove('visible');
     stopList.style.display = '';
     document.getElementById('btn-push-driver').style.display = '';
+    document.getElementById('btn-maps').style.display = '';
     renderVanResult(runs[0], startPc, departTime, returnToWh);
     updateMapsButton(runs[0]);
   } else {
     stopList.style.display = 'none';
     splitBoard.classList.add('visible');
     document.getElementById('btn-push-driver').style.display = 'none';
+    document.getElementById('btn-maps').style.display = 'none';
     renderSplitBoard(runs, vanLabels, startPc, departTime, returnToWh);
   }
 
@@ -1225,7 +1227,7 @@ function drawSplitBoard(vanLabels, startPc, departTime, returnToWh) {
       <div class="van-col-actions">
         <a class="van-btn-maps" href="${mapsUrl([startPc,...stops.map(s=>s.postcode)])}" target="_blank" rel="noopener">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-          Maps
+          Maps — ${label}
         </a>
         <button class="van-btn-share" data-share-van="${vanIdx}">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
