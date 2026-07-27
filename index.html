@@ -1,4 +1,4 @@
-<!-- Haul v3.4.4 -->
+<!-- Haul v3.4.5 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -433,7 +433,7 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.4.4</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.4.5</span></div>
     <button id="btn-install">Install App</button>
   </header>
   <div id="ios-banner">To install Haul on your home screen: tap the Share button in Safari, then choose "Add to Home Screen".</div>
@@ -568,7 +568,7 @@
 
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.4.4';
+const APP_VERSION = 'v3.4.5';
 
 // ── PWA MANIFEST ──
 (function() {
@@ -766,6 +766,9 @@ function fmtDist(km) {
   return mi < 0.1 ? `${Math.round(mi*1760)} yd` : `${mi.toFixed(1)} mi`;
 }
 function fmtDistRaw(km) { return useKm ? `${km.toFixed(2)} km` : `${(km*KM_TO_MI).toFixed(2)} mi`; }
+function mapsUrl(postcodes) {
+  return 'https://www.google.com/maps/dir/' + postcodes.map(p => encodeURIComponent(p + ', UK')).join('/');
+}
 
 document.querySelectorAll('.unit-toggle').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -979,7 +982,7 @@ function renderVanResult(run, startPc, departTime, returnToWh) {
 }
 
 function updateMapsButton(run) {
-  document.getElementById('btn-maps').href = 'https://www.google.com/maps/dir/'+run.postcodes.map(p=>encodeURIComponent(p)).join('/');
+  document.getElementById('btn-maps').href = mapsUrl(run.postcodes);
 }
 
 // ── SPLIT BOARD ──
@@ -1012,7 +1015,7 @@ function drawSplitBoard(vanLabels, startPc, departTime, returnToWh) {
       </div>
       <ul class="van-col-stops" data-van="${vanIdx}"></ul>
       <div class="van-col-actions">
-        <a class="van-btn-maps" href="${'https://www.google.com/maps/dir/'+[startPc,...stops.map(s=>s.postcode)].map(p=>encodeURIComponent(p)).join('/')}" target="_blank" rel="noopener">
+        <a class="van-btn-maps" href="${mapsUrl([startPc,...stops.map(s=>s.postcode)])}" target="_blank" rel="noopener">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
           Maps
         </a>
@@ -1158,9 +1161,16 @@ async function showShareModalFromPayload(payload, label) {
 
   let finalLink = longLink;
   try {
-    const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longLink)}`);
-    if (res.ok) { const s = await res.text(); if (s.startsWith('https://tinyurl.com/')) finalLink = s.trim(); }
-  } catch {}
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 5000);
+    const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longLink)}`, { signal: ctrl.signal });
+    clearTimeout(t);
+    if (res.ok) {
+      const s = (await res.text()).trim();
+      // Only accept a proper tinyurl short link — reject homepages, error pages, anything else
+      if (/^https:\/\/tinyurl\.com\/[a-z0-9]{4,}$/i.test(s)) finalLink = s;
+    }
+  } catch { /* fall back to long link silently */ }
 
   const linkTextEl = document.getElementById('share-link-text');
   const copyBtn = document.getElementById('btn-copy-link');
@@ -1253,7 +1263,7 @@ function renderDriverView(result) {
   `;
 
   // Maps button
-  document.getElementById('btn-driver-maps').href = 'https://www.google.com/maps/dir/'+run.postcodes.map(p=>encodeURIComponent(p)).join('/');
+  document.getElementById('btn-driver-maps').href = mapsUrl(run.postcodes);
 
   // Stop list
   const list = document.getElementById('driver-stop-list');
