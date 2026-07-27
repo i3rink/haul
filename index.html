@@ -976,7 +976,7 @@ function renderVanResult(run, startPc, departTime, returnToWh) {
     const arriveMin=elapsed+run.returnLeg.durMins;
     const clockTag=departTime?`<span class="leg-tag clock-tag">Back ${addMinsToTime(departTime,arriveMin)}</span>`:'';
     const li=document.createElement('li');
-    li.innerHTML=`<div class="stop-num end-dot">W</div><div class="stop-info"><div class="stop-name">Return to warehouse</div><div class="stop-pc">${startPc}</div><div class="leg-meta"><span class="leg-tag">${fmtDist(run.returnLeg.distKm)}</span><span class="leg-tag time-tag">${fmtMins(run.returnLeg.durMins)} drive</span><span class="leg-tag arrive-tag">+${fmtMins(arriveMin)} from start</span>${clockTag}</div></div>`;
+    li.innerHTML=`<div class="stop-num end-dot">F</div><div class="stop-info"><div class="stop-name">Return to warehouse</div><div class="stop-pc">${startPc}</div><div class="leg-meta"><span class="leg-tag">${fmtDist(run.returnLeg.distKm)}</span><span class="leg-tag time-tag">${fmtMins(run.returnLeg.durMins)} drive</span><span class="leg-tag arrive-tag">+${fmtMins(arriveMin)} from start</span>${clockTag}</div></div>`;
     list.appendChild(li);
   }
 }
@@ -1297,7 +1297,7 @@ function renderDriverView(result) {
     const clockStr=departTime?addMinsToTime(departTime,arriveMin):null;
     const li=document.createElement('li');
     li.innerHTML=`
-      <div class="driver-num end-dot">W</div>
+      <div class="driver-num end-dot">F</div>
       <div class="driver-stop-info">
         <div class="driver-postcode">${startPc}</div>
         <div class="driver-meta">
