@@ -1,4 +1,4 @@
-<!-- Haul v3.3.0 -->
+<!-- Haul v3.4.4 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -160,10 +160,128 @@
     .summary-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; font-size: 13px; color: var(--text); white-space: nowrap; }
     .summary-pill span { color: var(--accent); font-weight: 700; }
     .summary-pill.warn { border-color: var(--danger); color: var(--danger); }
-    #van-tabs { display: none; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-    #van-tabs.visible { display: flex; }
-    .van-tab { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: var(--muted); font-size: 13px; font-weight: 600; padding: 7px 14px; cursor: pointer; transition: all 0.15s; }
-    .van-tab.active { background: var(--accent); color: #0f0f1a; border-color: var(--accent); }
+    #van-tabs { display: none; }
+
+    /* ── SPLIT BOARD (multi-van) ── */
+    #split-board {
+      display: none;
+      gap: 12px;
+      margin-bottom: 20px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+    #split-board.visible {
+      display: flex;
+    }
+    .van-col {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      min-width: 240px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .van-col-header {
+      padding: 12px 14px 10px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .van-col-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .van-col-meta {
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .van-col-stops {
+      list-style: none;
+      padding: 8px;
+      flex: 1;
+      min-height: 80px;
+    }
+    .van-col-stops.drag-over {
+      background: rgba(240,192,64,0.05);
+      border-radius: 6px;
+    }
+    .stop-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      margin-bottom: 6px;
+      cursor: grab;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: opacity 0.15s, border-color 0.15s;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .stop-card:active { cursor: grabbing; }
+    .stop-card.dragging { opacity: 0.4; }
+    .stop-card.drag-placeholder {
+      border: 2px dashed var(--accent);
+      background: rgba(240,192,64,0.05);
+      height: 52px;
+    }
+    .stop-card-num {
+      background: var(--accent);
+      color: #0f0f1a;
+      font-size: 11px;
+      font-weight: 900;
+      min-width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .stop-card-pc {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      flex: 1;
+    }
+    .stop-card-drag {
+      color: var(--border);
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .van-col-actions {
+      padding: 10px 10px 12px;
+      display: flex;
+      gap: 8px;
+    }
+    .van-col-actions a, .van-col-actions button {
+      flex: 1;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 10px;
+      border-radius: var(--radius);
+      border: none;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: opacity 0.15s;
+    }
+    .van-col-actions a:hover, .van-col-actions button:hover { opacity: 0.85; }
+    .van-btn-maps { background: #4285f4; color: #fff; }
+    .van-btn-share { background: var(--green); color: #fff; }
 
     /* ── STOP LIST ── */
     #stop-list { list-style: none; margin-bottom: 20px; }
@@ -315,7 +433,7 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.3.0</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.4.4</span></div>
     <button id="btn-install">Install App</button>
   </header>
   <div id="ios-banner">To install Haul on your home screen: tap the Share button in Safari, then choose "Add to Home Screen".</div>
@@ -363,6 +481,11 @@
       </div>
     </div>
   </div>
+
+  <div id="van-labels-group" class="field-group" style="display:none;">
+    <div class="section-label">Van reg / name</div>
+    <div id="van-labels-container"></div>
+  </div>
   <label class="check-group field-group" style="display:flex;">
     <input type="checkbox" id="return-to-wh">
     <span>Include return to warehouse</span>
@@ -373,7 +496,7 @@
     <div class="divider"></div>
     <div id="results-header"><h2>Optimised route</h2></div>
     <div id="route-summary"></div>
-    <div id="van-tabs"></div>
+    <div id="split-board"></div>
     <ul id="stop-list"></ul>
     <div class="action-row">
       <a id="btn-maps" class="btn-action" target="_blank" rel="noopener">
@@ -445,7 +568,7 @@
 
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.3.0';
+const APP_VERSION = 'v3.4.4';
 
 // ── PWA MANIFEST ──
 (function() {
@@ -591,6 +714,38 @@ function addStop(postcode='') {
 }
 addStop(); addStop(); addStop();
 document.getElementById('btn-add-stop').addEventListener('click', () => addStop());
+
+// ── VAN LABELS UI ──
+const vanLabelsContainer = document.getElementById('van-labels-container');
+const vanLabelsGroup = document.getElementById('van-labels-group');
+const vanCountInput = document.getElementById('van-count');
+
+function rebuildVanLabels() {
+  const count = Math.max(1, Math.min(10, parseInt(vanCountInput.value) || 1));
+  vanLabelsGroup.style.display = count > 1 ? 'block' : 'none';
+  // Preserve existing values
+  const existing = Array.from(vanLabelsContainer.querySelectorAll('input')).map(i => i.value);
+  vanLabelsContainer.innerHTML = '';
+  for (let i = 0; i < count; i++) {
+    const row = document.createElement('div');
+    row.className = 'field-row';
+    row.innerHTML = `
+      <div style="font-size:12px;font-weight:700;color:var(--muted);width:44px;flex-shrink:0;">Van ${i+1}</div>
+      <input type="text" class="van-label-input" placeholder="e.g. YH61 WFG" value="${existing[i]||''}" autocomplete="off" spellcheck="false" style="text-transform:uppercase;">
+    `;
+    row.querySelector('input').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase(); });
+    vanLabelsContainer.appendChild(row);
+  }
+}
+
+vanCountInput.addEventListener('input', rebuildVanLabels);
+rebuildVanLabels();
+
+function getVanLabels() {
+  return Array.from(vanLabelsContainer.querySelectorAll('.van-label-input')).map((el, i) =>
+    el.value.trim() || `Van ${i + 1}`
+  );
+}
 
 // ── UTILS ──
 function haversine(a, b) {
@@ -750,7 +905,7 @@ async function optimise() {
     });
   }
 
-  currentResult = { runs, startPc, departTime, returnToWh, vanCount, usingFallback, stops };
+  currentResult = { runs, startPc, departTime, returnToWh, vanCount, usingFallback, stops, vanLabels: getVanLabels() };
   renderResults(currentResult);
   setStatus('');
   btn.disabled = false;
@@ -760,28 +915,8 @@ async function optimise() {
 const STOP_DWELL = 15;
 let activeVan = 0;
 
-function renderResults({ runs, startPc, departTime, returnToWh, vanCount, usingFallback }) {
+function renderResults({ runs, startPc, departTime, returnToWh, usingFallback, vanLabels=[] }) {
   activeVan = 0;
-  const vanTabsEl = document.getElementById('van-tabs');
-  vanTabsEl.innerHTML = '';
-  if (runs.length > 1) {
-    vanTabsEl.classList.add('visible');
-    runs.forEach((_,i) => {
-      const btn = document.createElement('button');
-      btn.className = 'van-tab'+(i===0?' active':'');
-      btn.textContent = `Van ${i+1}`;
-      btn.addEventListener('click', () => {
-        activeVan=i;
-        document.querySelectorAll('.van-tab').forEach((b,j)=>b.classList.toggle('active',j===i));
-        renderVanResult(runs[i], startPc, departTime, returnToWh);
-        updateMapsButton(runs[i]);
-      });
-      vanTabsEl.appendChild(btn);
-    });
-  } else { vanTabsEl.classList.remove('visible'); }
-
-  renderVanResult(runs[0], startPc, departTime, returnToWh);
-  updateMapsButton(runs[0]);
 
   const totalDist = runs.reduce((a,r)=>{let d=r.stops.reduce((s,st)=>s+st.leg.distKm,0);if(r.returnLeg)d+=r.returnLeg.distKm;return a+d;},0);
   const totalDrive = runs.reduce((a,r)=>{let d=r.stops.reduce((s,st)=>s+st.leg.durMins,0);if(r.returnLeg)d+=r.returnLeg.durMins;return a+d;},0);
@@ -796,6 +931,22 @@ function renderResults({ runs, startPc, departTime, returnToWh, vanCount, usingF
     ${runs.length>1?`<div class="summary-pill"><span>${runs.length}</span> vans</div>`:''}
     ${usingFallback?'<div class="summary-pill warn">Straight-line estimates</div>':''}
   `;
+
+  const splitBoard = document.getElementById('split-board');
+  const stopList   = document.getElementById('stop-list');
+
+  if (runs.length === 1) {
+    splitBoard.classList.remove('visible');
+    stopList.style.display = '';
+    document.getElementById('btn-push-driver').style.display = '';
+    renderVanResult(runs[0], startPc, departTime, returnToWh);
+    updateMapsButton(runs[0]);
+  } else {
+    stopList.style.display = 'none';
+    splitBoard.classList.add('visible');
+    document.getElementById('btn-push-driver').style.display = 'none';
+    renderSplitBoard(runs, vanLabels, startPc, departTime, returnToWh);
+  }
 
   document.getElementById('results').style.display = 'block';
   document.getElementById('results').scrollIntoView({ behavior:'smooth' });
@@ -831,42 +982,198 @@ function updateMapsButton(run) {
   document.getElementById('btn-maps').href = 'https://www.google.com/maps/dir/'+run.postcodes.map(p=>encodeURIComponent(p)).join('/');
 }
 
+// ── SPLIT BOARD ──
+// Holds mutable stop assignments: splitStops[vanIdx] = [stopObj, ...]
+let splitStops = [];
+
+function renderSplitBoard(runs, vanLabels, startPc, departTime, returnToWh) {
+  // Initialise mutable split state from current runs
+  splitStops = runs.map(r => [...r.stops]);
+  drawSplitBoard(vanLabels, startPc, departTime, returnToWh);
+}
+
+function drawSplitBoard(vanLabels, startPc, departTime, returnToWh) {
+  const board = document.getElementById('split-board');
+  board.innerHTML = '';
+
+  splitStops.forEach((stops, vanIdx) => {
+    const label = vanLabels[vanIdx] || `Van ${vanIdx + 1}`;
+    const colDist = stops.reduce((a,s)=>a+(s.leg?s.leg.distKm:0),0);
+    const colDrive = stops.reduce((a,s)=>a+(s.leg?s.leg.durMins:0),0);
+
+    const col = document.createElement('div');
+    col.className = 'van-col';
+    col.dataset.van = vanIdx;
+
+    col.innerHTML = `
+      <div class="van-col-header">
+        <div class="van-col-title">${label}</div>
+        <div class="van-col-meta">${stops.length} stop${stops.length!==1?'s':''} · ${fmtDist(colDist)} · ${fmtMins(colDrive+stops.length*STOP_DWELL)}</div>
+      </div>
+      <ul class="van-col-stops" data-van="${vanIdx}"></ul>
+      <div class="van-col-actions">
+        <a class="van-btn-maps" href="${'https://www.google.com/maps/dir/'+[startPc,...stops.map(s=>s.postcode)].map(p=>encodeURIComponent(p)).join('/')}" target="_blank" rel="noopener">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+          Maps
+        </a>
+        <button class="van-btn-share" data-share-van="${vanIdx}">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          Share
+        </button>
+      </div>
+    `;
+
+    const stopsList = col.querySelector('.van-col-stops');
+    stops.forEach((stop, stopIdx) => {
+      const card = document.createElement('li');
+      card.className = 'stop-card';
+      card.draggable = true;
+      card.dataset.van = vanIdx;
+      card.dataset.stop = stopIdx;
+      card.innerHTML = `
+        <div class="stop-card-num">${stopIdx + 1}</div>
+        <div class="stop-card-pc">${stop.postcode}</div>
+        <div class="stop-card-drag">⠿</div>
+      `;
+      wireDrag(card);
+      stopsList.appendChild(card);
+    });
+
+    wireDropZone(stopsList);
+
+    col.querySelector('[data-share-van]').addEventListener('click', () => {
+      shareFromSplitBoard(vanIdx, vanLabels);
+    });
+
+    board.appendChild(col);
+  });
+}
+
+// ── DRAG AND DROP ──
+let dragSrcVan = null, dragSrcStop = null;
+
+function wireDrag(card) {
+  card.addEventListener('dragstart', e => {
+    dragSrcVan  = parseInt(card.dataset.van);
+    dragSrcStop = parseInt(card.dataset.stop);
+    card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+  });
+  card.addEventListener('dragend', () => {
+    card.classList.remove('dragging');
+    document.querySelectorAll('.van-col-stops').forEach(z => z.classList.remove('drag-over'));
+  });
+
+  // Touch drag support
+  card.addEventListener('touchstart', e => {
+    dragSrcVan  = parseInt(card.dataset.van);
+    dragSrcStop = parseInt(card.dataset.stop);
+  }, { passive: true });
+  card.addEventListener('touchend', e => {
+    const touch = e.changedTouches[0];
+    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const zone = el ? el.closest('.van-col-stops') : null;
+    if (zone) {
+      const destVan = parseInt(zone.dataset.van);
+      if (destVan !== dragSrcVan) moveStop(dragSrcVan, dragSrcStop, destVan);
+    }
+  }, { passive: true });
+}
+
+function wireDropZone(zone) {
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); e.dataTransfer.dropEffect = 'move'; });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const destVan = parseInt(zone.dataset.van);
+    if (dragSrcVan !== null && destVan !== dragSrcVan) {
+      moveStop(dragSrcVan, dragSrcStop, destVan);
+    }
+    dragSrcVan = null; dragSrcStop = null;
+  });
+}
+
+function moveStop(fromVan, fromStop, toVan) {
+  const stop = splitStops[fromVan].splice(fromStop, 1)[0];
+  splitStops[toVan].push(stop);
+  // Renumber cards — re-draw
+  const { vanLabels, startPc, departTime, returnToWh } = currentResult;
+  drawSplitBoard(vanLabels, startPc, departTime, returnToWh);
+}
+
+function shareFromSplitBoard(vanIdx, vanLabels) {
+  const label = vanLabels[vanIdx] || `Van ${vanIdx + 1}`;
+  const stops = splitStops[vanIdx];
+  if (!stops.length) { showModal('No stops', `<p style="color:var(--muted);font-size:14px;">${label} has no stops assigned.</p>`, [{label:'Close',fn:closeModal,style:'background:var(--surface);border:1px solid var(--border);color:var(--text);'}]); return; }
+  const { startPc, departTime, returnToWh, usingFallback } = currentResult;
+  const postcodes = [startPc, ...stops.map(s => s.postcode)];
+  if (returnToWh) postcodes.push(startPc);
+  const payload = {
+    runs: [{ stops, postcodes, returnLeg: null }],
+    startPc, departTime, returnToWh,
+    vanCount: 1, vanLabel: label,
+    usingFallback, unit: useKm ? 'km' : 'mi'
+  };
+  showShareModalFromPayload(payload, label);
+}
+
 // ── PUSH TO DRIVER ──
 document.getElementById('btn-push-driver').addEventListener('click', () => {
   if (!currentResult) return;
-  const vanCount = currentResult.runs.length;
-  if (vanCount === 1) {
-    showShareModal(0);
-  } else {
-    const options = currentResult.runs.map((run, i) =>
-      `<button class="btn-primary" style="margin-bottom:8px;background:var(--surface);border:1px solid var(--border);color:var(--text);text-align:left;padding:12px 16px;" data-van="${i}">
-        <strong>Van ${i+1}</strong>
-        <span style="color:var(--muted);font-size:13px;margin-left:8px;">${run.stops.length} stop${run.stops.length!==1?'s':''} · ${fmtDist(run.stops.reduce((a,s)=>a+s.leg.distKm,0)+(run.returnLeg?run.returnLeg.distKm:0))}</span>
-      </button>`
-    ).join('');
-    showModal(
-      'Share which van?',
-      `<p style="color:var(--muted);font-size:13px;margin-bottom:14px;">Pick the route to generate a share link for.</p>${options}`,
-      [{ label:'Cancel', fn:closeModal, style:'background:var(--surface);border:1px solid var(--border);color:var(--text);' }]
-    );
-    document.querySelectorAll('#modal-body [data-van]').forEach(btn => {
-      btn.addEventListener('click', () => { closeModal(); showShareModal(parseInt(btn.dataset.van)); });
-    });
-  }
+  // For multi-van, share buttons are on each column — this button only fires for single van
+  showShareModal(0);
 });
 
 function buildPayload(vanIdx) {
   const run = currentResult.runs[vanIdx];
+  const labels = currentResult.vanLabels || [];
   return {
     runs: [run],
     startPc: currentResult.startPc,
     departTime: currentResult.departTime,
     returnToWh: currentResult.returnToWh,
     vanCount: 1,
-    vanLabel: currentResult.runs.length > 1 ? `Van ${vanIdx + 1}` : null,
+    vanLabel: labels[vanIdx] || (currentResult.runs.length > 1 ? `Van ${vanIdx + 1}` : null),
     usingFallback: currentResult.usingFallback,
     unit: useKm ? 'km' : 'mi'
   };
+}
+
+async function showShareModalFromPayload(payload, label) {
+  const encoded = encodeRoute(payload);
+  if (!encoded) { showModal('Error','<p style="color:var(--danger);">Could not generate link.</p>',[{label:'Close',fn:closeModal,style:'background:var(--surface);border:1px solid var(--border);color:var(--text);'}]); return; }
+  const base = window.location.href.split('?')[0].split('#')[0];
+  const longLink = `${base}?r=${encoded}`;
+
+  showModal(
+    `Share – ${label}`,
+    `<p style="color:var(--muted);font-size:13px;margin-bottom:16px;">Send this link to the driver. They tap it and Haul opens with their route loaded.</p>
+    <div id="share-link-box" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-size:13px;word-break:break-all;color:var(--muted);margin-bottom:12px;min-height:42px;display:flex;align-items:center;">
+      <span id="share-link-text" style="flex:1;">Shortening link…</span>
+    </div>
+    <button id="btn-copy-link" class="btn-primary" style="margin-top:0;" disabled>Copy link</button>`,
+    [{ label:'Close', fn:closeModal, style:'background:var(--surface);border:1px solid var(--border);color:var(--text);margin-top:8px;' }]
+  );
+
+  let finalLink = longLink;
+  try {
+    const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longLink)}`);
+    if (res.ok) { const s = await res.text(); if (s.startsWith('https://tinyurl.com/')) finalLink = s.trim(); }
+  } catch {}
+
+  const linkTextEl = document.getElementById('share-link-text');
+  const copyBtn = document.getElementById('btn-copy-link');
+  if (linkTextEl) linkTextEl.textContent = finalLink;
+  if (copyBtn) {
+    copyBtn.disabled = false;
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(finalLink).then(() => {
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => { copyBtn.textContent = 'Copy link'; }, 2000);
+      });
+    });
+  }
 }
 
 function encodeRoute(payload) {
@@ -893,46 +1200,10 @@ function buildShareLink(vanIdx) {
 }
 
 async function showShareModal(vanIdx) {
-  const longLink = buildShareLink(vanIdx);
-  const label = currentResult.runs.length > 1 ? `Van ${vanIdx + 1}` : 'Driver';
-  if (!longLink) {
-    showModal('Error', '<p style="color:var(--danger);">Could not generate link.</p>', [{label:'Close',fn:closeModal,style:'background:var(--surface);border:1px solid var(--border);color:var(--text);'}]);
-    return;
-  }
-
-  // Show modal with loading state first
-  showModal(
-    `Share route – ${label}`,
-    `<p style="color:var(--muted);font-size:13px;margin-bottom:16px;">Send this link to the driver. They tap it on their phone and Haul opens with their route loaded.</p>
-    <div id="share-link-box" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-size:13px;word-break:break-all;color:var(--muted);margin-bottom:12px;min-height:42px;display:flex;align-items:center;">
-      <span id="share-link-text" style="flex:1;">Shortening link…</span>
-    </div>
-    <button id="btn-copy-link" class="btn-primary" style="margin-top:0;" disabled>Copy link</button>`,
-    [{ label:'Close', fn:closeModal, style:'background:var(--surface);border:1px solid var(--border);color:var(--text);margin-top:8px;' }]
-  );
-
-  // Try to shorten via TinyURL
-  let finalLink = longLink;
-  try {
-    const res = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longLink)}`);
-    if (res.ok) {
-      const short = await res.text();
-      if (short.startsWith('https://tinyurl.com/')) finalLink = short.trim();
-    }
-  } catch { /* fall back to long link silently */ }
-
-  const linkTextEl = document.getElementById('share-link-text');
-  const copyBtn = document.getElementById('btn-copy-link');
-  if (linkTextEl) linkTextEl.textContent = finalLink;
-  if (copyBtn) {
-    copyBtn.disabled = false;
-    copyBtn.addEventListener('click', () => {
-      navigator.clipboard.writeText(finalLink).then(() => {
-        copyBtn.textContent = 'Copied!';
-        setTimeout(() => { copyBtn.textContent = 'Copy link'; }, 2000);
-      });
-    });
-  }
+  const payload = buildPayload(vanIdx);
+  const labels = currentResult.vanLabels || [];
+  const label = labels[vanIdx] || (currentResult.runs.length > 1 ? `Van ${vanIdx+1}` : 'Driver');
+  await showShareModalFromPayload(payload, label);
 }
 
 // ── CHECK FOR ROUTE IN URL ON LOAD ──
@@ -1209,41 +1480,81 @@ document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.targe
   function stopGame(){active=false;overlay.classList.remove('active');if(raf){cancelAnimationFrame(raf);raf=null;}keys={};}
   function resetGame(){score=0;lives=3;speed=2.2;frameCount=0;player={x:80,y:GROUND-28,w:28,h:28,vy:0,onGround:true,throwing:false};packages=[];houses=[];obstacles=[];particles=[];updateHUD();for(let i=0;i<4;i++)spawnHouse(W+i*220+80);spawnObstacle(W+300);}
   function updateHUD(){document.getElementById('egg-score').textContent=score;document.getElementById('egg-lives').textContent=lives;}
-  function spawnHouse(x){houses.push({x,y:ROAD_TOP-60,w:56,h:60,delivered:false,flashTimer:0});}
+  function spawnHouse(x){const lit=Math.random()>0.35;houses.push({x,y:ROAD_TOP-44,w:56,h:60,delivered:false,flashTimer:0,lit});}
   function spawnObstacle(x){obstacles.push({x,y:GROUND-18,w:20,h:18});}
-  function throwPkg(){if(!active)return;packages.push({x:player.x+24,y:player.y+8,vx:speed+4,vy:-3,w:10,h:8});player.throwing=true;setTimeout(()=>{player.throwing=false;},180);}
+  function throwPkg(){if(!active)return;packages.push({x:player.x+28,y:player.y+6,vx:speed+5,vy:-7,w:10,h:8});player.throwing=true;setTimeout(()=>{player.throwing=false;},180);}
   function spawnParticles(x,y,color){for(let i=0;i<10;i++)particles.push({x,y,vx:(Math.random()-.5)*4,vy:(Math.random()-.5)*4-2,s:Math.random()*5+2,color,life:30,maxLife:30});}
   function drawSky(){const g=ctx.createLinearGradient(0,0,0,ROAD_TOP);g.addColorStop(0,'#0a0a1a');g.addColorStop(1,'#1a2040');ctx.fillStyle=g;ctx.fillRect(0,0,W,ROAD_TOP);ctx.fillStyle='#fff';for(let i=0;i<30;i++)ctx.fillRect((i*137+frameCount*.3)%W,(i*73)%(ROAD_TOP-10),i%3===0?2:1,i%3===0?2:1);}
   function drawRoad(){ctx.fillStyle='#2a2a3a';ctx.fillRect(0,ROAD_TOP,W,ROAD_BOT-ROAD_TOP);ctx.fillStyle='#888';ctx.fillRect(0,ROAD_TOP,W,4);ctx.fillRect(0,ROAD_BOT,W,4);ctx.fillStyle='#555';const off=(frameCount*speed)%68;for(let x=-40+off;x<W+40;x+=68)ctx.fillRect(x,(ROAD_TOP+ROAD_BOT)/2-2,28,4);ctx.fillStyle='#3a3a2a';ctx.fillRect(0,ROAD_BOT,W,H-ROAD_BOT);}
-  function drawHouse(h){const f=h.flashTimer>0;ctx.fillStyle=f?'#f0c040':'#3a4060';ctx.fillRect(h.x,h.y+24,h.w,h.h-24);ctx.fillStyle=f?'#ffdd20':'#c0392b';ctx.beginPath();ctx.moveTo(h.x-4,h.y+24);ctx.lineTo(h.x+h.w/2,h.y);ctx.lineTo(h.x+h.w+4,h.y+24);ctx.closePath();ctx.fill();ctx.fillStyle='#1a1a2e';ctx.fillRect(h.x+h.w/2-6,h.y+h.h-18,12,18);ctx.fillStyle=f?'#fff':'#f0c040';ctx.fillRect(h.x+6,h.y+30,12,10);if(!h.delivered){ctx.fillStyle='#f0c040';ctx.fillRect(h.x+h.w/2-8,h.y+h.h-10,16,4);}}
+  function drawHouse(h){
+    const f=h.flashTimer>0;
+    // Body
+    ctx.fillStyle=f?(h.lit?'#f0c040':'#e05a2b'):'#3a4060';ctx.fillRect(h.x,h.y+24,h.w,h.h-24);
+    // Roof
+    ctx.fillStyle=f?(h.lit?'#ffdd20':'#ff2200'):'#c0392b';ctx.beginPath();ctx.moveTo(h.x-4,h.y+24);ctx.lineTo(h.x+h.w/2,h.y);ctx.lineTo(h.x+h.w+4,h.y+24);ctx.closePath();ctx.fill();
+    // Door
+    ctx.fillStyle='#1a1a2e';ctx.fillRect(h.x+h.w/2-6,h.y+h.h-18,12,18);
+    // Window — lit=yellow, dark=black
+    ctx.fillStyle=f?'#fff':(h.lit?'#f0c040':'#111');ctx.fillRect(h.x+6,h.y+30,12,10);
+    // Letterbox only on lit houses
+    if(h.lit&&!h.delivered){ctx.fillStyle='#f0c040';ctx.fillRect(h.x+h.w/2-8,h.y+h.h-10,16,4);}
+  }
   function drawPlayer(){const p=player;ctx.fillStyle='#f0c040';ctx.fillRect(p.x+4,p.y+14,20,8);ctx.fillStyle='#e8e8f0';ctx.beginPath();ctx.arc(p.x+7,p.y+24,6,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(p.x+21,p.y+24,6,0,Math.PI*2);ctx.fill();ctx.fillStyle='#1a1a2e';ctx.beginPath();ctx.arc(p.x+7,p.y+24,2,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(p.x+21,p.y+24,2,0,Math.PI*2);ctx.fill();ctx.fillStyle='#f5cba7';ctx.beginPath();ctx.arc(p.x+16,p.y+6,7,0,Math.PI*2);ctx.fill();ctx.fillStyle='#e05a2b';ctx.beginPath();ctx.arc(p.x+16,p.y+4,7,Math.PI,0);ctx.fill();if(p.throwing){ctx.fillStyle='#f5cba7';ctx.fillRect(p.x+20,p.y+10,10,4);}ctx.fillStyle='#555';ctx.fillRect(p.x-2,p.y+10,8,10);}
   function drawPackage(pkg){ctx.fillStyle='#f0c040';ctx.fillRect(pkg.x,pkg.y,pkg.w,pkg.h);ctx.strokeStyle='#e05a2b';ctx.lineWidth=1.5;ctx.strokeRect(pkg.x,pkg.y,pkg.w,pkg.h);ctx.beginPath();ctx.moveTo(pkg.x+pkg.w/2,pkg.y);ctx.lineTo(pkg.x+pkg.w/2,pkg.y+pkg.h);ctx.stroke();ctx.lineWidth=1;}
   function drawObstacle(o){ctx.fillStyle='#e05a2b';ctx.beginPath();ctx.moveTo(o.x+o.w/2,o.y);ctx.lineTo(o.x+o.w,o.y+o.h);ctx.lineTo(o.x,o.y+o.h);ctx.closePath();ctx.fill();ctx.fillStyle='#fff';ctx.fillRect(o.x+4,o.y+o.h*.4,o.w-8,3);ctx.fillStyle='#2a2a2a';ctx.fillRect(o.x,o.y+o.h,o.w,3);}
   function gameOver(){ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(0,0,W,H);ctx.textAlign='center';ctx.fillStyle='#f0c040';ctx.font='bold 32px monospace';ctx.fillText('GAME OVER',W/2,H/2-20);ctx.fillStyle='#e8e8f0';ctx.font='18px monospace';ctx.fillText(`Score: ${score}`,W/2,H/2+14);ctx.fillStyle='#888';ctx.font='13px monospace';ctx.fillText('Click to restart  ·  ESC to quit',W/2,H/2+40);ctx.textAlign='left';active=false;canvas.onclick=()=>{canvas.onclick=null;resetGame();active=true;raf=requestAnimationFrame(loop);};}
   function loop(){
-    if(!active)return;frameCount++;ctx.clearRect(0,0,W,H);drawSky();drawRoad();
-    if(frameCount%600===0)speed=Math.min(speed+0.2,5);
-    houses.forEach(h=>{h.x-=speed;if(h.flashTimer>0)h.flashTimer--;drawHouse(h);});
-    houses=houses.filter(h=>h.x>-100);
-    if(!houses.length||houses[houses.length-1].x<W-160)spawnHouse(W+60+Math.random()*120);
-    obstacles.forEach(o=>{o.x-=speed;drawObstacle(o);});
-    obstacles=obstacles.filter(o=>o.x>-40);
-    if(!obstacles.length||obstacles[obstacles.length-1].x<W-280){if(Math.random()<0.6)spawnObstacle(W+60+Math.random()*80);}
-    packages.forEach(pkg=>{pkg.x+=pkg.vx;pkg.vy+=0.18;pkg.y+=pkg.vy;drawPackage(pkg);houses.forEach(h=>{if(!h.delivered&&pkg.x+pkg.w>h.x&&pkg.x<h.x+h.w&&pkg.y+pkg.h>h.y&&pkg.y<h.y+h.h){h.delivered=true;h.flashTimer=40;spawnParticles(h.x+h.w/2,h.y+20,'#f0c040');score+=10;updateHUD();pkg.dead=true;}});if(pkg.y>H)pkg.dead=true;});
-    packages=packages.filter(p=>!p.dead);
-    const p=player;
-    if(keys['ArrowUp']&&p.onGround){p.vy=-8;p.onGround=false;keys['ArrowUp']=false;}
-    p.vy+=0.5;p.y+=p.vy;if(p.y>=GROUND-p.h){p.y=GROUND-p.h;p.vy=0;p.onGround=true;}
-    ctx.save();particles.forEach(pt=>{ctx.globalAlpha=pt.life/pt.maxLife;ctx.fillStyle=pt.color;ctx.fillRect(pt.x,pt.y,pt.s,pt.s);pt.x+=pt.vx;pt.y+=pt.vy;pt.life--;});ctx.restore();
-    particles=particles.filter(pt=>pt.life>0);
-    drawPlayer();
-    let dead=false;
-    obstacles.forEach(o=>{if(p.x+22>o.x&&p.x+6<o.x+o.w&&p.y+p.h>o.y&&p.y<o.y+o.h){lives--;updateHUD();spawnParticles(p.x+14,p.y+14,'#e05a2b');o.x=-200;if(lives<=0)dead=true;}});
-    if(dead){gameOver();return;}
-    ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(0,H-28,W,28);ctx.fillStyle='#888899';ctx.font='11px monospace';ctx.fillText('SPACE = throw  ·  UP = jump  ·  ESC = quit',10,H-10);
-    raf=requestAnimationFrame(loop);
+    if(!active)return;
+    try {
+      frameCount++;ctx.clearRect(0,0,W,H);drawSky();drawRoad();
+      if(frameCount%600===0)speed=Math.min(speed+0.2,5);
+      houses.forEach(h=>{h.x-=speed;if(h.flashTimer>0)h.flashTimer--;drawHouse(h);});
+      houses=houses.filter(h=>h.x>-100);
+      if(!houses.length||houses[houses.length-1].x<W-160)spawnHouse(W+60+Math.random()*120);
+      obstacles.forEach(o=>{o.x-=speed;drawObstacle(o);});
+      obstacles=obstacles.filter(o=>o.x>-40);
+      if(!obstacles.length||obstacles[obstacles.length-1].x<W-280){if(Math.random()<0.6)spawnObstacle(W+60+Math.random()*80);}
+      packages.forEach(pkg=>{pkg.x+=pkg.vx;pkg.vy+=0.28;pkg.y+=pkg.vy;drawPackage(pkg);houses.forEach(h=>{if(!h.delivered&&pkg.x+pkg.w>h.x&&pkg.x<h.x+h.w&&pkg.y+pkg.h>h.y&&pkg.y<h.y+h.h){h.delivered=true;h.flashTimer=40;if(h.lit){spawnParticles(h.x+h.w/2,h.y+20,'#f0c040');score+=10;}else{spawnParticles(h.x+h.w/2,h.y+20,'#e05a2b');score=Math.max(0,score-10);}updateHUD();pkg.dead=true;}});if(pkg.y>ROAD_BOT)pkg.dead=true;});
+      packages=packages.filter(p=>!p.dead);
+      const p=player;
+      if(keys['ArrowUp']&&p.onGround){p.vy=-8;p.onGround=false;keys['ArrowUp']=false;}
+      p.vy+=0.5;p.y+=p.vy;if(p.y>=GROUND-p.h){p.y=GROUND-p.h;p.vy=0;p.onGround=true;}
+      ctx.save();particles.forEach(pt=>{ctx.globalAlpha=pt.life/pt.maxLife;ctx.fillStyle=pt.color;ctx.fillRect(pt.x,pt.y,pt.s,pt.s);pt.x+=pt.vx;pt.y+=pt.vy;pt.life--;});ctx.restore();
+      particles=particles.filter(pt=>pt.life>0);
+      drawPlayer();
+      let dead=false;
+      obstacles.forEach(o=>{if(p.x+22>o.x&&p.x+6<o.x+o.w&&p.y+p.h>o.y&&p.y<o.y+o.h){lives--;updateHUD();spawnParticles(p.x+14,p.y+14,'#e05a2b');o.x=-200;if(lives<=0)dead=true;}});
+      if(dead){gameOver();return;}
+      ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(0,H-28,W,28);ctx.fillStyle='#888899';ctx.font='11px monospace';ctx.fillText('SPACE = throw  ·  UP = jump  ·  ESC = quit',10,H-10);
+      raf=requestAnimationFrame(loop);
+    } catch(err) {
+      // Surface error on canvas so it's visible
+      ctx.fillStyle='rgba(0,0,0,0.85)';ctx.fillRect(0,0,W,H);
+      ctx.fillStyle='#e05a2b';ctx.font='bold 14px monospace';ctx.textAlign='center';
+      ctx.fillText('Game error — tap to restart',W/2,H/2-14);
+      ctx.fillStyle='#888';ctx.font='11px monospace';
+      ctx.fillText(String(err).slice(0,60),W/2,H/2+10);
+      ctx.textAlign='left';
+      active=false;
+      canvas.onclick=()=>{canvas.onclick=null;resetGame();active=true;raf=requestAnimationFrame(loop);};
+    }
   }
-  document.addEventListener('keydown',e=>{if(!active)return;if(e.code==='Space'){e.preventDefault();throwPkg();}if(e.code==='ArrowUp'){e.preventDefault();if(player.onGround){player.vy=-8;player.onGround=false;}}});
+
+  // Visibility change — pause and resume cleanly
+  document.addEventListener('visibilitychange', () => {
+    if (!active) return;
+    if (document.hidden) {
+      cancelAnimationFrame(raf); raf=null;
+    } else {
+      raf=requestAnimationFrame(loop);
+    }
+  });
+
+  document.addEventListener('keydown',e=>{
+    if(!active)return;
+    if(e.code==='Space'){e.preventDefault();throwPkg();}
+    if(e.code==='ArrowUp'){e.preventDefault();if(player.onGround){player.vy=-8;player.onGround=false;}}
+  });
 })();
 </script>
 </body>
