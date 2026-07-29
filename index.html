@@ -1,4 +1,4 @@
-<!-- Haul v3.6.1 -->
+<!-- Haul v3.7.0 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -123,6 +123,7 @@
 
     /* ── FORM ── */
     .section-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+    .job-ref-tag { display:inline-block; margin-left:6px; font-size:11px; font-weight:700; padding:2px 7px; border-radius:4px; background:rgba(240,192,64,.15); color:var(--accent); border:1px solid rgba(240,192,64,.3); letter-spacing:.3px; vertical-align:middle; }
     .field-group { margin-bottom: 20px; }
     .field-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
     input[type="text"], input[type="time"], input[type="number"], select {
@@ -474,7 +475,7 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.6.1</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.7.0</span></div>
     <button id="btn-install">Install App</button>
   </header>
   <div id="ios-banner">To install Haul on your home screen: tap the Share button in Safari, then choose "Add to Home Screen".</div>
@@ -617,7 +618,95 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.6.1';
+const APP_VERSION = 'v3.7.0';
+// ── SUPABASE CONFIG ──
+const HELM_URL = 'https://xjnrmltfruzwmnhxplzn.supabase.co';
+const HELM_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqbnJtbHRmcnV6d21uaHhwbHpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzMxNTAsImV4cCI6MjEwMDkwOTE1MH0.oDGbg7nGByR2ppjn8tYhTAz3tjUjPQkegbu40OH6Oq8';
+const TALLI_URL = 'https://jlqonolsenwyipgqgmfr.supabase.co';
+const TALLI_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpscW9ub2xzZW53eWlwZ3FnbWZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NzE1NTgsImV4cCI6MjA5NjI0NzU1OH0.dJC8G4UO9o2-oS42Hdb9GCGn_1RsoXB1fsrVODShoo0';
+
+async function sbFetch(baseUrl, key, path, opts = {}) {
+  const res = await fetch(`${baseUrl}/rest/v1/${path}`, {
+    headers: {
+      'apikey': key,
+      'Authorization': `Bearer ${key}`,
+      'Content-Type': 'application/json',
+      'Prefer': opts.prefer || 'return=representation',
+      ...opts.headers,
+    },
+    ...opts,
+  });
+  if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.message || `HTTP ${res.status}`); }
+  if (res.status === 204) return null;
+  return res.json();
+}
+
+// Look up job ref from Talli deliveries by postcode
+async function lookupJobRef(postcode) {
+  try {
+    const pc = postcode.trim().toUpperCase().replace(/\s+/g, ' ');
+    const rows = await sbFetch(TALLI_URL, TALLI_KEY,
+      `deliveries?customer_postcode=eq.${encodeURIComponent(pc)}&archived=eq.false&select=job_ref&order=created_at.desc&limit=1`
+    );
+    if (rows && rows.length > 0 && rows[0].job_ref) return rows[0].job_ref;
+  } catch {}
+  return null;
+}
+
+// Save route to Helm Supabase, return route ID
+async function saveRouteToSupabase(payload, vanLabel) {
+  try {
+    const allStops = payload.runs[0].stops || [];
+    const totalDist = allStops.reduce((s, st) => s + (st.leg ? st.leg.distKm : 0), 0)
+      + (payload.runs[0].returnLeg ? payload.runs[0].returnLeg.distKm : 0);
+    const row = {
+      van_label: vanLabel || null,
+      stops: JSON.stringify(payload),
+      total_distance_miles: +(totalDist * 0.621371).toFixed(2),
+      departure_time: payload.departTime || null,
+      status: 'active',
+    };
+    const result = await sbFetch(HELM_URL, HELM_KEY, 'routes', {
+      method: 'POST',
+      body: JSON.stringify(row),
+      prefer: 'return=representation',
+    });
+    return result && result[0] ? result[0].id : null;
+  } catch (e) {
+    console.warn('Supabase route save failed:', e.message);
+    return null;
+  }
+}
+
+// Save mileage log entry to Helm Supabase
+async function saveMileageToSupabase(record) {
+  try {
+    await sbFetch(HELM_URL, HELM_KEY, 'mileage_log', {
+      method: 'POST',
+      body: JSON.stringify(record),
+      prefer: 'return=minimal',
+    });
+    return true;
+  } catch (e) {
+    console.warn('Supabase mileage save failed:', e.message);
+    return false;
+  }
+}
+
+// Load route from Helm Supabase by ID
+async function loadRouteFromSupabase(routeId) {
+  try {
+    const rows = await sbFetch(HELM_URL, HELM_KEY, `routes?id=eq.${routeId}&select=stops`);
+    if (rows && rows[0] && rows[0].stops) {
+      return typeof rows[0].stops === 'string' ? JSON.parse(rows[0].stops) : rows[0].stops;
+    }
+  } catch (e) {
+    console.warn('Supabase route load failed:', e.message);
+  }
+  return null;
+}
+
+
 
 // ── PWA MANIFEST ──
 (function() {
@@ -897,6 +986,9 @@ function splitRuns(distKm, durMins, vanCount, stopCount) {
   return runs;
 }
 
+// ── 3-STOP CAP ──
+const MAX_STOPS_PER_VAN = 3;
+
 // ── RESULT STATE ──
 let currentResult = null;
 
@@ -917,6 +1009,39 @@ async function optimise() {
   const stops = rows.map(r => ({ postcode: normPC(r.querySelector('.stop-postcode').value) })).filter(s => s.postcode);
 
   if (stops.length < 2) { setStatus('Add at least 2 stops.', true); btn.disabled=false; return; }
+
+  // 3-stop cap check
+  const stopsPerVan = Math.ceil(stops.length / vanCount);
+  if (stopsPerVan > MAX_STOPS_PER_VAN) {
+    const minVans = Math.ceil(stops.length / MAX_STOPS_PER_VAN);
+    const extra = stops.length - (vanCount * MAX_STOPS_PER_VAN);
+    // Show warning but allow admin to proceed or add vans
+    const proceed = await new Promise(resolve => {
+      showModal(
+        'Van capacity',
+        `<p style="font-size:14px;line-height:1.6;color:var(--text);">
+          <strong>${stops.length} stops</strong> across <strong>${vanCount} van${vanCount>1?'s':''}</strong> means
+          up to <strong>${stopsPerVan} stops per van</strong> — over the 3-stop limit.
+        </p>
+        <p style="font-size:13px;color:var(--muted);margin-top:10px;">
+          You need at least <strong>${minVans} van${minVans>1?'s':''}</strong> for ${stops.length} stops.<br>
+          Or continue as is — stops will be split as evenly as possible.
+        </p>`,
+        [
+          { label: `Set to ${minVans} van${minVans>1?'s':''}`, fn: () => {
+            document.getElementById('van-count').value = minVans;
+            closeModal();
+            resolve('retry');
+          }, style: 'background:var(--accent);color:#0f0f1a;border:none;' },
+          { label: 'Continue anyway', fn: () => { closeModal(); resolve('continue'); }, style: 'background:var(--surface);border:1px solid var(--border);color:var(--text);' },
+          { label: 'Cancel', fn: () => { closeModal(); resolve('cancel'); }, style: 'background:var(--surface);border:1px solid var(--border);color:var(--text);' },
+        ]
+      );
+    });
+    if (proceed === 'cancel') { btn.disabled=false; return; }
+    if (proceed === 'retry') { btn.disabled=false; optimise(); return; }
+    // 'continue' falls through
+  }
 
   setStatus('Geocoding postcodes…');
   let allCoords;
@@ -1354,35 +1479,39 @@ function buildPayload(vanIdx) {
 }
 
 async function showShareModalFromPayload(payload, label) {
-  const encoded = encodeRoute(payload);
-  if (!encoded) { showModal('Error','<p style="color:var(--danger);">Could not generate link.</p>',[{label:'Close',fn:closeModal,style:'background:var(--surface);border:1px solid var(--border);color:var(--text);'}]); return; }
-  const base = window.location.href.split('?')[0].split('#')[0];
-  const longLink = `${base}?r=${encoded}`;
-
   showModal(
     `Share – ${label}`,
-    `<p style="color:var(--muted);font-size:13px;margin-bottom:16px;">Send this link to the driver. They tap it and Haul opens with their route loaded.</p>
+    `<p style="color:var(--muted);font-size:13px;margin-bottom:16px;">Saving route and generating link…</p>
     <div id="share-link-box" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-size:13px;word-break:break-all;color:var(--muted);margin-bottom:12px;min-height:42px;display:flex;align-items:center;">
-      <span id="share-link-text" style="flex:1;">Shortening link…</span>
+      <span id="share-link-text" style="flex:1;">Saving to database…</span>
     </div>
     <button id="btn-copy-link" class="btn-primary" style="margin-top:0;" disabled>Copy link</button>`,
     [{ label:'Close', fn:closeModal, style:'background:var(--surface);border:1px solid var(--border);color:var(--text);margin-top:8px;' }]
   );
 
-  let finalLink = longLink;
-  try {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 5000);
-    const res = await fetch(`https://is.gd/create.php?format=simple&url=${encodeURIComponent(longLink)}`, { signal: ctrl.signal });
-    clearTimeout(t);
-    if (res.ok) {
-      const s = (await res.text()).trim();
-      if (/^https:\/\/is\.gd\/[A-Za-z0-9]{4,}$/.test(s)) finalLink = s;
-    }
-  } catch { /* fall back to long link silently */ }
-
   const linkTextEl = document.getElementById('share-link-text');
   const copyBtn = document.getElementById('btn-copy-link');
+
+  // Save to Supabase and get a route ID for a clean short link
+  const routeId = await saveRouteToSupabase(payload, label);
+
+  let finalLink;
+  if (routeId) {
+    // Supabase-backed link — reliable, works every time
+    const base = window.location.href.split('?')[0].split('#')[0];
+    finalLink = `${base}?route=${routeId}`;
+  } else {
+    // Fallback: encode route in URL (old behaviour)
+    const encoded = encodeRoute(payload);
+    const base = window.location.href.split('?')[0].split('#')[0];
+    finalLink = encoded ? `${base}?r=${encoded}` : null;
+  }
+
+  if (!finalLink) {
+    if (linkTextEl) linkTextEl.textContent = 'Could not generate link — try again.';
+    return;
+  }
+
   if (linkTextEl) linkTextEl.textContent = finalLink;
   if (copyBtn) {
     copyBtn.disabled = false;
@@ -1426,36 +1555,45 @@ async function showShareModal(vanIdx) {
 }
 
 // ── CHECK FOR ROUTE IN URL ON LOAD ──
-(function() {
+// Handles both ?route=supabase-id (new) and ?r=encoded (legacy fallback)
+(async function() {
   try {
     const params = new URLSearchParams(window.location.search);
-    const r = params.get('r');
-    if (!r) return;
-    const payload = decodeRoute(r);
-    if (!payload || !payload.runs) return;
-    // Save to localStorage as a cache — but do NOT strip the URL param
-    // so the same link keeps working on repeat opens
-    localStorage.setItem('haul_driver_route', JSON.stringify({ ...payload, pushedAt: new Date().toISOString() }));
-    // Will be rendered by renderDriverView(null) call below
+    const routeId = params.get('route');
+    const encoded = params.get('r');
+
+    if (routeId) {
+      // New Supabase-backed link
+      const payload = await loadRouteFromSupabase(routeId);
+      if (payload && payload.runs) {
+        localStorage.setItem('haul_driver_route', JSON.stringify({ ...payload, pushedAt: new Date().toISOString() }));
+      }
+    } else if (encoded) {
+      // Legacy encoded URL fallback
+      const payload = decodeRoute(encoded);
+      if (payload && payload.runs) {
+        localStorage.setItem('haul_driver_route', JSON.stringify({ ...payload, pushedAt: new Date().toISOString() }));
+      }
+    }
   } catch {}
 })();
 
 // ── DRIVER VIEW RENDER ──
 function renderDriverView(result) {
   if (!result) {
-    // Try URL param first (most up to date), then localStorage
+    // Try localStorage (populated by async URL check above), then legacy ?r= param
     try {
-      const params = new URLSearchParams(window.location.search);
-      const r = params.get('r');
-      if (r) {
-        const payload = decodeRoute(r);
-        if (payload && payload.runs) result = payload;
-      }
+      const stored = localStorage.getItem('haul_driver_route');
+      if (stored) result = JSON.parse(stored);
     } catch {}
     if (!result) {
       try {
-        const stored = localStorage.getItem('haul_driver_route');
-        if (stored) result = JSON.parse(stored);
+        const params = new URLSearchParams(window.location.search);
+        const r = params.get('r');
+        if (r) {
+          const payload = decodeRoute(r);
+          if (payload && payload.runs) result = payload;
+        }
       } catch {}
     }
   }
@@ -1558,13 +1696,28 @@ document.getElementById('btn-copy').addEventListener('click', () => {
 });
 
 // ── SAVE TO MILEAGE LOG ──
-document.getElementById('btn-save-run').addEventListener('click', () => {
+document.getElementById('btn-save-run').addEventListener('click', async () => {
   if (!currentResult) return;
   const totalDist=currentResult.runs.reduce((a,r)=>{let d=r.stops.reduce((s,st)=>s+st.leg.distKm,0);if(r.returnLeg)d+=r.returnLeg.distKm;return a+d;},0);
   const totalDrive=currentResult.runs.reduce((a,r)=>{let d=r.stops.reduce((s,st)=>s+st.leg.durMins,0);if(r.returnLeg)d+=r.returnLeg.durMins;return a+d;},0);
   const allStops=currentResult.runs.flatMap(r=>r.stops);
   const record={ id:Date.now(), date:new Date().toISOString(), startPc:currentResult.startPc, stops:allStops.map(s=>({postcode:s.postcode})), totalDistKm:totalDist, totalDriveMins:totalDrive, vanCount:currentResult.vanCount, returnToWh:currentResult.returnToWh, departTime:currentResult.departTime };
+
+  // Save to localStorage (local backup)
   const log=getLog(); log.push(record); saveLog(log);
+
+  // Save to Helm Supabase (persistent, exportable)
+  const sbRecord = {
+    van_label: currentResult.vanLabels ? currentResult.vanLabels[0] : null,
+    date: new Date().toISOString().split('T')[0],
+    stops: JSON.stringify(allStops.map(s=>({postcode:s.postcode}))),
+    stop_count: allStops.length,
+    distance_miles: +(totalDist * 0.621371).toFixed(2),
+    drive_time_mins: Math.round(totalDrive),
+    departure_time: currentResult.departTime || null,
+  };
+  saveMileageToSupabase(sbRecord); // fire and forget
+
   const btn=document.getElementById('btn-save-run'); const orig=btn.innerHTML;
   btn.textContent='Saved!'; setTimeout(()=>{btn.innerHTML=orig;},2000);
 });
