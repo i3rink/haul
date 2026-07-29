@@ -1,4 +1,4 @@
-<!-- Haul v3.7.1 -->
+<!-- Haul v3.7.2 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -855,6 +855,21 @@ function addStop(postcode='') {
     const all = Array.from(stopsContainer.querySelectorAll('.stop-postcode'));
     const idx = all.indexOf(e.target);
     if (idx < all.length - 1) { all[idx + 1].focus(); } else { addStop(); }
+  });
+  // On blur, look up job ref from Talli and show as a tag
+  row.querySelector('.stop-postcode').addEventListener('blur', async e => {
+    const pc = normPC(e.target.value);
+    if (!pc) return;
+    const existing = row.querySelector('.job-ref-tag');
+    if (existing) { existing.remove(); } // refresh on re-entry
+    const jobRef = await lookupJobRef(pc);
+    if (jobRef) {
+      const tag = document.createElement('span');
+      tag.className = 'job-ref-tag';
+      tag.textContent = jobRef;
+      tag.title = 'Job ref from Talli';
+      row.appendChild(tag);
+    }
   });
   stopsContainer.appendChild(row);
 }
