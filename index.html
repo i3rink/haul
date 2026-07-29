@@ -1,4 +1,4 @@
-<!-- Haul v3.7.2 -->
+<!-- Haul v3.7.4 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -646,7 +646,7 @@ async function lookupJobRef(postcode) {
   try {
     const pc = postcode.trim().toUpperCase().replace(/\s+/g, ' ');
     const rows = await sbFetch(TALLI_URL, TALLI_KEY,
-      `deliveries?customer_postcode=eq.${encodeURIComponent(pc)}&archived=eq.false&select=job_ref&order=created_at.desc&limit=1`
+      `deliveries?customer_postcode=eq.${encodeURIComponent(pc)}&select=job_ref&order=created_at.desc&limit=1`
     );
     if (rows && rows.length > 0 && rows[0].job_ref) return rows[0].job_ref;
   } catch {}
@@ -838,7 +838,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 const stopsContainer = document.getElementById('stops-container');
 let stopCount = 0;
 
-function addStop(postcode='') {
+function addStop(postcode='', jobRef='') {
   if (stopCount >= 20) return;
   stopCount++;
   const row = document.createElement('div');
@@ -847,30 +847,45 @@ function addStop(postcode='') {
     <input type="text" class="stop-postcode" placeholder="Postcode" value="${postcode}" autocomplete="off" spellcheck="false" style="flex:1;width:auto;">
     <button class="btn-remove" title="Remove" tabindex="-1">×</button>
   `;
+  // If a jobRef was passed in (e.g. loading a saved route), show it immediately
+  if (jobRef) {
+    const tag = document.createElement('span');
+    tag.className = 'job-ref-tag';
+    tag.textContent = `#${jobRef}`;
+    tag.title = `Job ref from Talli`;
+    row.insertBefore(tag, row.querySelector('.btn-remove'));
+  }
+
   row.querySelector('.btn-remove').addEventListener('click', () => { row.remove(); stopCount = Math.max(0, stopCount-1); });
+
+  const pcInput = row.querySelector('.stop-postcode');
+
   // Enter moves to next postcode or adds a new stop
-  row.querySelector('.stop-postcode').addEventListener('keydown', e => {
+  pcInput.addEventListener('keydown', e => {
     if (e.key !== 'Enter') return;
     e.preventDefault();
     const all = Array.from(stopsContainer.querySelectorAll('.stop-postcode'));
-    const idx = all.indexOf(e.target);
+    const idx = all.indexOf(pcInput);
     if (idx < all.length - 1) { all[idx + 1].focus(); } else { addStop(); }
   });
+
   // On blur, look up job ref from Talli and show as a tag
-  row.querySelector('.stop-postcode').addEventListener('blur', async e => {
+  pcInput.addEventListener('blur', async e => {
     const pc = normPC(e.target.value);
     if (!pc) return;
     const existing = row.querySelector('.job-ref-tag');
-    if (existing) { existing.remove(); } // refresh on re-entry
-    const jobRef = await lookupJobRef(pc);
-    if (jobRef) {
+    if (existing) existing.remove(); // refresh on re-entry
+    const ref = await lookupJobRef(pc);
+    if (ref) {
       const tag = document.createElement('span');
       tag.className = 'job-ref-tag';
-      tag.textContent = jobRef;
-      tag.title = 'Job ref from Talli';
-      row.appendChild(tag);
+      tag.textContent = `#${ref}`;
+      tag.title = `Job ref from Talli`;
+      row.insertBefore(tag, row.querySelector('.btn-remove'));
+      row.dataset.jobRef = ref;
     }
   });
+
   stopsContainer.appendChild(row);
 }
 addStop(); addStop(); addStop();
@@ -1029,7 +1044,10 @@ async function optimise() {
   const returnToWh = document.getElementById('return-to-wh').checked;
 
   const rows = Array.from(stopsContainer.querySelectorAll('.field-row'));
-  const stops = rows.map(r => ({ postcode: normPC(r.querySelector('.stop-postcode').value) })).filter(s => s.postcode);
+  const stops = rows.map(r => ({
+    postcode: normPC(r.querySelector('.stop-postcode').value),
+    jobRef: r.dataset.jobRef || ''
+  })).filter(s => s.postcode);
 
   if (stops.length < 2) { setStatus('Add at least 2 stops.', true); btn.disabled=false; return; }
 
@@ -1169,7 +1187,7 @@ function renderVanResult(run, startPc, departTime, returnToWh) {
     const li=document.createElement('li');
     li.draggable = true;
     li.dataset.postcode = stop.postcode;
-    li.innerHTML=`<div class="drag-handle">⠿</div><div class="stop-num">${i+1}</div><div class="stop-info"><div class="stop-name">${stop.postcode}</div><div class="leg-meta"><span class="leg-tag">${fmtDist(stop.leg.distKm)}</span><span class="leg-tag time-tag">${fmtMins(driveMin)} drive</span><span class="leg-tag arrive-tag">+${fmtMins(arriveMin)} from start</span>${clockTag}</div></div>`;
+    li.innerHTML=`<div class="drag-handle">⠿</div><div class="stop-num">${i+1}</div><div class="stop-info"><div class="stop-name">${stop.postcode}${stop.jobRef?` <span style="font-size:11px;color:var(--muted);font-weight:600;">#${stop.jobRef}</span>`:''}</div><div class="leg-meta"><span class="leg-tag">${fmtDist(stop.leg.distKm)}</span><span class="leg-tag time-tag">${fmtMins(driveMin)} drive</span><span class="leg-tag arrive-tag">+${fmtMins(arriveMin)} from start</span>${clockTag}</div></div>`;
     list.appendChild(li);
   });
 
@@ -1660,7 +1678,7 @@ function renderDriverView(result) {
     li.innerHTML=`
       <div class="driver-num">${i+1}</div>
       <div class="driver-stop-info">
-        <div class="driver-postcode">${stop.postcode}</div>
+        <div class="driver-postcode">${stop.postcode}${stop.jobRef ? `<span style="font-size:13px;font-weight:600;color:var(--muted);margin-left:10px;">#${stop.jobRef}</span>` : ''}</div>
         <div class="driver-meta">
           <span class="driver-tag dist">${fmtDist(stop.leg.distKm)}</span>
           <span class="driver-tag drive">${fmtMins(driveMin)} drive</span>
@@ -1755,7 +1773,7 @@ document.getElementById('btn-save-route').addEventListener('click', () => {
       if (!name) return;
       const routes=getSavedRoutes();
       const rows=Array.from(stopsContainer.querySelectorAll('.field-row'));
-      const stops=rows.map(r=>({postcode:normPC(r.querySelector('.stop-postcode').value)})).filter(s=>s.postcode);
+      const stops=rows.map(r=>({postcode:normPC(r.querySelector('.stop-postcode').value), jobRef: r.dataset.jobRef||''})).filter(s=>s.postcode);
       routes.push({id:Date.now(),name,stops,savedAt:new Date().toISOString()});
       setSavedRoutes(routes); closeModal();
     }, style:'background:var(--accent);color:#0f0f1a;border:none;' }
@@ -1800,7 +1818,7 @@ function renderSavedRoutes() {
 
 function loadSavedRoute(route) {
   stopsContainer.innerHTML=''; stopCount=0;
-  route.stops.forEach(s=>addStop(s.postcode));
+  route.stops.forEach(s=>addStop(s.postcode, s.jobRef||''));
   showPage('planner');
   window.scrollTo({top:0,behavior:'smooth'});
 }
