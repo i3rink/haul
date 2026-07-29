@@ -1,4 +1,4 @@
-<!-- Haul v3.7.0 -->
+<!-- Haul v3.7.1 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -845,9 +845,17 @@ function addStop(postcode='') {
   row.className = 'field-row';
   row.innerHTML = `
     <input type="text" class="stop-postcode" placeholder="Postcode" value="${postcode}" autocomplete="off" spellcheck="false" style="flex:1;width:auto;">
-    <button class="btn-remove" title="Remove">×</button>
+    <button class="btn-remove" title="Remove" tabindex="-1">×</button>
   `;
   row.querySelector('.btn-remove').addEventListener('click', () => { row.remove(); stopCount = Math.max(0, stopCount-1); });
+  // Enter moves to next postcode or adds a new stop
+  row.querySelector('.stop-postcode').addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const all = Array.from(stopsContainer.querySelectorAll('.stop-postcode'));
+    const idx = all.indexOf(e.target);
+    if (idx < all.length - 1) { all[idx + 1].focus(); } else { addStop(); }
+  });
   stopsContainer.appendChild(row);
 }
 addStop(); addStop(); addStop();
