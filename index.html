@@ -1,4 +1,4 @@
-<!-- Haul v3.7.4 -->
+<!-- Haul v3.7.5 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -123,7 +123,7 @@
 
     /* ── FORM ── */
     .section-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
-    .job-ref-tag { display:inline-block; margin-left:6px; font-size:11px; font-weight:700; padding:2px 7px; border-radius:4px; background:rgba(240,192,64,.15); color:var(--accent); border:1px solid rgba(240,192,64,.3); letter-spacing:.3px; vertical-align:middle; }
+    .job-ref-tag { display:inline-block; margin-left:6px; font-size:11px; font-weight:700; padding:2px 7px; border-radius:4px; background:rgba(240,192,64,.15); color:var(--accent); border:1px solid rgba(240,192,64,.3); letter-spacing:.3px; vertical-align:middle; flex-shrink:0; white-space:nowrap; }
     .field-group { margin-bottom: 20px; }
     .field-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
     input[type="text"], input[type="time"], input[type="number"], select {
@@ -294,7 +294,7 @@
     .stop-num.start-dot { background: var(--accent2); }
     .stop-num.end-dot { background: var(--green); }
     .stop-info { flex: 1; }
-    .stop-info .stop-name { font-weight: 600; font-size: 15px; }
+    .stop-info .stop-name { font-weight: 600; font-size: 15px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
     .stop-info .stop-pc { font-size: 12px; color: var(--muted); margin-top: 1px; }
     .leg-meta { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
     .leg-tag { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: rgba(240,192,64,0.1); color: var(--accent); border: 1px solid rgba(240,192,64,0.2); }
@@ -475,7 +475,7 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.7.4</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.7.5</span></div>
     <button id="btn-install">Install App</button>
   </header>
   <div id="ios-banner">To install Haul on your home screen: tap the Share button in Safari, then choose "Add to Home Screen".</div>
@@ -618,7 +618,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.7.4';
+const APP_VERSION = 'v3.7.5';
 // ── SUPABASE CONFIG ──
 const HELM_URL = 'https://xjnrmltfruzwmnhxplzn.supabase.co';
 const HELM_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqbnJtbHRmcnV6d21uaHhwbHpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzMxNTAsImV4cCI6MjEwMDkwOTE1MH0.oDGbg7nGByR2ppjn8tYhTAz3tjUjPQkegbu40OH6Oq8';
@@ -1187,7 +1187,7 @@ function renderVanResult(run, startPc, departTime, returnToWh) {
     const li=document.createElement('li');
     li.draggable = true;
     li.dataset.postcode = stop.postcode;
-    li.innerHTML=`<div class="drag-handle">⠿</div><div class="stop-num">${i+1}</div><div class="stop-info"><div class="stop-name">${stop.postcode}${stop.jobRef?` <span style="font-size:11px;color:var(--muted);font-weight:600;">#${stop.jobRef}</span>`:''}</div><div class="leg-meta"><span class="leg-tag">${fmtDist(stop.leg.distKm)}</span><span class="leg-tag time-tag">${fmtMins(driveMin)} drive</span><span class="leg-tag arrive-tag">+${fmtMins(arriveMin)} from start</span>${clockTag}</div></div>`;
+    li.innerHTML=`<div class="drag-handle">⠿</div><div class="stop-num">${i+1}</div><div class="stop-info"><div class="stop-name"><span>${stop.postcode}</span>${stop.jobRef?`<span class="leg-tag" style="margin-left:auto;">#${stop.jobRef}</span>`:''}</div><div class="leg-meta"><span class="leg-tag">${fmtDist(stop.leg.distKm)}</span><span class="leg-tag time-tag">${fmtMins(driveMin)} drive</span><span class="leg-tag arrive-tag">+${fmtMins(arriveMin)} from start</span>${clockTag}</div></div>`;
     list.appendChild(li);
   });
 
@@ -1678,11 +1678,12 @@ function renderDriverView(result) {
     li.innerHTML=`
       <div class="driver-num">${i+1}</div>
       <div class="driver-stop-info">
-        <div class="driver-postcode">${stop.postcode}${stop.jobRef ? `<span style="font-size:13px;font-weight:600;color:var(--muted);margin-left:10px;">#${stop.jobRef}</span>` : ''}</div>
+        <div class="driver-postcode">${stop.postcode}</div>
         <div class="driver-meta">
           <span class="driver-tag dist">${fmtDist(stop.leg.distKm)}</span>
           <span class="driver-tag drive">${fmtMins(driveMin)} drive</span>
           ${clockStr?`<span class="driver-tag clock">Arrive ${clockStr}</span>`:''}
+          ${stop.jobRef?`<span class="driver-tag" style="margin-left:auto;background:rgba(240,192,64,.15);color:var(--accent);border:1px solid rgba(240,192,64,.3);">#${stop.jobRef}</span>`:''}
         </div>
       </div>`;
     list.appendChild(li);
