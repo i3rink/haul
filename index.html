@@ -1,4 +1,4 @@
-<!-- Haul v3.7.6 -->
+<!-- Haul v3.7.7 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -475,7 +475,7 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.7.6</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.7.7</span></div>
     <button id="btn-install">Install App</button>
   </header>
   <div id="ios-banner">To install Haul on your home screen: tap the Share button in Safari, then choose "Add to Home Screen".</div>
@@ -618,7 +618,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.7.6';
+const APP_VERSION = 'v3.7.7';
 // ── SUPABASE CONFIG ──
 const HELM_URL = 'https://xjnrmltfruzwmnhxplzn.supabase.co';
 const HELM_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqbnJtbHRmcnV6d21uaHhwbHpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzMxNTAsImV4cCI6MjEwMDkwOTE1MH0.oDGbg7nGByR2ppjn8tYhTAz3tjUjPQkegbu40OH6Oq8';
@@ -644,7 +644,8 @@ async function sbFetch(baseUrl, key, path, opts = {}) {
 // Look up job ref from Talli deliveries by postcode
 async function lookupJobRef(postcode) {
   try {
-    const pc = postcode.trim().toUpperCase().replace(/\s+/g, ' ');
+    const s = postcode.trim().toUpperCase().replace(/\s+/g,'');
+    const pc = s.length > 3 ? s.slice(0,-3) + ' ' + s.slice(-3) : s;
     const rows = await sbFetch(TALLI_URL, TALLI_KEY,
       `deliveries?customer_postcode=eq.${encodeURIComponent(pc)}&select=job_ref&order=created_at.desc&limit=1`
     );
@@ -929,7 +930,12 @@ function haversine(a, b) {
   const s=Math.sin(dLat/2)**2+Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLon/2)**2;
   return R*2*Math.atan2(Math.sqrt(s),Math.sqrt(1-s));
 }
-function normPC(pc) { return pc.trim().toUpperCase().replace(/\s+/g,' '); }
+function normPC(pc) {
+  const s = pc.trim().toUpperCase().replace(/\s+/g,'');
+  // Insert space before last 3 chars (UK postcode format)
+  if (s.length > 3) return s.slice(0, -3) + ' ' + s.slice(-3);
+  return s;
+}
 function setStatus(msg, isError=false) { const el=document.getElementById('status'); el.textContent=msg; el.className=isError?'error':''; }
 function fmtMins(m) { if(m<60) return `${Math.round(m)} min`; const h=Math.floor(m/60),mn=Math.round(m%60); return mn===0?`${h}h`:`${h}h ${mn}m`; }
 
