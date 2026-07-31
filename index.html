@@ -618,7 +618,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.7.7';
+const APP_VERSION = 'v3.7.8';
 // ── SUPABASE CONFIG ──
 const HELM_URL = 'https://xjnrmltfruzwmnhxplzn.supabase.co';
 const HELM_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhqbnJtbHRmcnV6d21uaHhwbHpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzMxNTAsImV4cCI6MjEwMDkwOTE1MH0.oDGbg7nGByR2ppjn8tYhTAz3tjUjPQkegbu40OH6Oq8';
@@ -829,11 +829,28 @@ function showPage(tabName) {
   document.getElementById(tabName + '-page').classList.add('active');
   if (tabName === 'saved') renderSavedRoutes();
   if (tabName === 'history') renderHistory();
+  // Push history state so Android back button navigates within app
+  history.pushState({ tab: tabName }, '', location.href);
 }
 
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => showPage(btn.dataset.tab));
 });
+
+// Intercept back button — navigate within app instead of exiting
+window.addEventListener('popstate', function(e) {
+  if (e.state && e.state.tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === e.state.tab));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    var pg = document.getElementById(e.state.tab + '-page');
+    if (pg) pg.classList.add('active');
+  } else {
+    history.pushState({ tab: 'planner' }, '', location.href);
+  }
+});
+
+// Seed initial history state on load
+history.replaceState({ tab: 'planner' }, '', location.href);
 
 // ── STOPS UI ──
 const stopsContainer = document.getElementById('stops-container');
