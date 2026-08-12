@@ -1,4 +1,4 @@
-<!-- Haul v3.7.9 -->
+<!-- Haul v3.8.1 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -33,68 +33,6 @@
     a { color: var(--accent); }
 
     /* ── PIN SCREEN ── */
-    #pin-screen {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: var(--bg);
-      z-index: 500;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 32px 24px;
-    }
-    #pin-screen.active { display: flex; }
-    #pin-logo { font-size: 36px; font-weight: 900; color: var(--accent); margin-bottom: 8px; letter-spacing: -1px; }
-    #pin-subtitle { font-size: 13px; color: var(--muted); margin-bottom: 32px; }
-    #pin-dots { display: flex; gap: 14px; margin-bottom: 28px; }
-    .pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border); background: transparent; transition: background 0.15s, border-color 0.15s; }
-    .pin-dot.filled { background: var(--accent); border-color: var(--accent); }
-    .pin-dot.error { background: var(--danger); border-color: var(--danger); }
-    #pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; max-width: 260px; }
-    .pin-key {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      color: var(--text);
-      font-size: 22px;
-      font-weight: 600;
-      padding: 18px 10px;
-      cursor: pointer;
-      text-align: center;
-      font-family: var(--font);
-      transition: background 0.1s, border-color 0.1s;
-      user-select: none;
-      -webkit-user-select: none;
-    }
-    .pin-key:active { background: var(--surface2); border-color: var(--accent); }
-    .pin-key.del { font-size: 16px; color: var(--muted); }
-    #pin-cancel { margin-top: 20px; background: none; border: none; color: var(--muted); font-size: 13px; cursor: pointer; padding: 8px; }
-
-    /* ── MODE BAR ── */
-    #mode-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: var(--surface2);
-      border-bottom: 1px solid var(--border);
-      padding: 8px 14px;
-      font-size: 12px;
-    }
-    #mode-label { font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
-    #mode-label.admin { color: var(--accent); }
-    #mode-label.driver { color: var(--green); }
-    #mode-toggle-btn {
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      color: var(--muted);
-      font-size: 12px;
-      font-weight: 600;
-      padding: 5px 10px;
-      cursor: pointer;
-    }
-
     /* ── NAV TABS ── */
     #tab-bar {
       display: flex;
@@ -322,6 +260,16 @@
     #driver-no-route .icon { font-size: 40px; margin-bottom: 14px; }
     #driver-no-route p { font-size: 15px; line-height: 1.6; }
 
+    /* ── SHIFT STOP CARDS ── */
+    .shift-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; }
+    .shift-card-num { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+    .shift-card-postcode { font-size: 24px; font-weight: 900; letter-spacing: 2px; color: var(--accent); margin-bottom: 4px; }
+    .shift-card-door { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .shift-card-jobref { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+    .shift-card-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .shift-btn-maps { background: #4285f4; color: #fff; border: none; border-radius: 6px; padding: 10px 14px; font-size: 13px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+    .shift-btn-maps:hover { opacity: .88; }
+
     /* ── ACTION BUTTONS ── */
     .action-row { display: flex; gap: 10px; flex-wrap: wrap; }
     .btn-action { flex: 1; min-width: 140px; border: none; border-radius: var(--radius); padding: 13px 16px; font-size: 14px; font-weight: 700; cursor: pointer; text-align: center; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: opacity 0.15s; }
@@ -409,7 +357,7 @@
 
     /* ── PRINT ── */
     @media print {
-      #tab-bar, #mode-bar, #pin-screen, #btn-maps, #btn-copy, #btn-print, #btn-save-run, #btn-reset, #van-tabs, .action-row, #modal-overlay, #egg-overlay, #btn-driver-maps { display: none !important; }
+      #tab-bar, #driver-waiting, #driver-shift, #btn-maps, #btn-copy, #btn-print, #btn-save-run, #btn-reset, #van-tabs, .action-row, #modal-overlay, #egg-overlay, #btn-driver-maps { display: none !important; }
       body { background: #fff; color: #000; font-size: 12pt; }
       #app { max-width: 100%; padding: 0; }
       .page { display: block !important; padding: 0; }
@@ -433,39 +381,7 @@
 <body>
 
 <!-- ── PIN SCREEN ── -->
-<div id="pin-screen">
-  <div id="pin-logo">Haul</div>
-  <div id="pin-subtitle">Enter admin PIN</div>
-  <div id="pin-dots">
-    <div class="pin-dot" id="pd0"></div>
-    <div class="pin-dot" id="pd1"></div>
-    <div class="pin-dot" id="pd2"></div>
-    <div class="pin-dot" id="pd3"></div>
-  </div>
-  <div id="pin-pad">
-    <button class="pin-key" data-n="1">1</button>
-    <button class="pin-key" data-n="2">2</button>
-    <button class="pin-key" data-n="3">3</button>
-    <button class="pin-key" data-n="4">4</button>
-    <button class="pin-key" data-n="5">5</button>
-    <button class="pin-key" data-n="6">6</button>
-    <button class="pin-key" data-n="7">7</button>
-    <button class="pin-key" data-n="8">8</button>
-    <button class="pin-key" data-n="9">9</button>
-    <div></div>
-    <button class="pin-key" data-n="0">0</button>
-    <button class="pin-key del" id="pin-del">⌫</button>
-  </div>
-  <button id="pin-cancel">Cancel</button>
-</div>
-
-<!-- ── MODE BAR ── -->
-<div id="mode-bar">
-  <span id="mode-label" class="driver">Driver view</span>
-  <button id="mode-toggle-btn">Admin</button>
-</div>
-
-<!-- ── TAB BAR (admin only) ── -->
+<!-- ── TAB BAR (admin only — shown when Helm identifies non-driver role) ── -->
 <div id="tab-bar" style="display:none;">
   <button class="tab-btn active" data-tab="planner">Planner</button>
   <button class="tab-btn" data-tab="saved">Saved routes</button>
@@ -475,16 +391,35 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.7.9</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.8.1</span></div>
     <button id="btn-install">Install App</button>
   </header>
   <div id="ios-banner">To install Haul on your home screen: tap the Share button in Safari, then choose "Add to Home Screen".</div>
 
-  <div id="driver-no-route">
-    <div class="icon">🚐</div>
-    <p>No route loaded yet.<br>Ask your planner to optimise and push a route.</p>
+  <!-- Waiting for Helm to pass user context -->
+  <div id="driver-waiting" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 24px;gap:12px;color:var(--muted);text-align:center;">
+    <div style="font-size:2rem;">🚐</div>
+    <p style="font-size:.9rem;">Connecting to Helm…<br>Open Haul via Helm to get started.</p>
   </div>
 
+  <!-- Shift view — shown once Helm identifies driver -->
+  <div id="driver-shift" style="display:none;padding:16px;">
+    <div id="driver-greeting" style="font-size:1.1rem;font-weight:700;margin-bottom:4px;"></div>
+    <div id="driver-date" style="font-size:.8rem;color:var(--muted);margin-bottom:20px;"></div>
+
+    <!-- Today's stops -->
+    <div id="driver-no-stops" style="display:none;text-align:center;padding:40px 0;color:var(--muted);">
+      <div style="font-size:2rem;margin-bottom:8px;">📦</div>
+      <p>No deliveries assigned for today.</p>
+    </div>
+    <div id="driver-stop-cards"></div>
+  </div>
+
+  <!-- Legacy shared-route driver view (kept for backwards compat) -->
+  <div id="driver-no-route" style="display:none;">
+    <div class="icon">🚐</div>
+    <p>No route loaded yet.<br>Ask your planner to push a route.</p>
+  </div>
   <div id="driver-route" style="display:none;">
     <div id="driver-summary" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;"></div>
     <a id="btn-driver-maps" target="_blank" rel="noopener">
@@ -524,8 +459,8 @@
     </div>
   </div>
 
-  <div id="van-labels-group" class="field-group" style="display:none;">
-    <div class="section-label">Van reg / name</div>
+  <div id="van-labels-group" class="field-group">
+    <div class="section-label">Van details</div>
     <div id="van-labels-container"></div>
   </div>
   <label class="check-group field-group" style="display:flex;">
@@ -618,7 +553,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.7.9';
+const APP_VERSION = 'v3.8.1';
 document.getElementById('app-version').textContent = APP_VERSION;
 // ── SUPABASE CONFIG ──
 const HELM_URL = 'https://xjnrmltfruzwmnhxplzn.supabase.co';
@@ -662,11 +597,12 @@ async function saveRouteToSupabase(payload, vanLabel) {
     const totalDist = allStops.reduce((s, st) => s + (st.leg ? st.leg.distKm : 0), 0)
       + (payload.runs[0].returnLeg ? payload.runs[0].returnLeg.distKm : 0);
     const row = {
-      van_label: vanLabel || null,
-      stops: JSON.stringify(payload),
+      van_label:            vanLabel || null,
+      driver_name:          payload.driverName || null,
+      stops:                JSON.stringify(payload),
       total_distance_miles: +(totalDist * 0.621371).toFixed(2),
-      departure_time: payload.departTime || null,
-      status: 'active',
+      departure_time:       payload.departTime || null,
+      status:               'active',
     };
     const result = await sbFetch(HELM_URL, HELM_KEY, 'routes', {
       method: 'POST',
@@ -736,90 +672,102 @@ btnInstall.addEventListener('click', async () => { if (!deferredPrompt) return; 
     document.getElementById('ios-banner').style.display = 'block';
 })();
 
-// ── MODE: driver / admin ──
-const ADMIN_PIN = '1690';
-let isAdmin = false;
-let pinBuffer = '';
+// ── HELM AUTH — receive user context via postMessage ──
+let helmUser = null;
 
-function setMode(admin) {
-  isAdmin = admin;
-  document.getElementById('mode-label').textContent = admin ? 'Admin' : 'Driver view';
-  document.getElementById('mode-label').className = admin ? 'admin' : 'driver';
-  document.getElementById('mode-toggle-btn').textContent = admin ? 'Lock' : 'Admin';
-  document.getElementById('tab-bar').style.display = admin ? 'flex' : 'none';
-  if (admin) {
-    showPage('planner');
+function applyHelmUser(user) {
+  helmUser = user;
+  const isDriver = user.role_name && user.role_name.toLowerCase() === 'driver';
+
+  // Show/hide tab bar (admin planner) vs driver shift view
+  document.getElementById('tab-bar').style.display = isDriver ? 'none' : 'flex';
+
+  if (isDriver) {
+    // Driver: show shift view, hide waiting screen
+    document.getElementById('driver-waiting').style.display = 'none';
+    document.getElementById('driver-shift').style.display = 'block';
+    document.getElementById('driver-greeting').textContent = `Hello, ${user.name.split(' ')[0]}.`;
+    document.getElementById('driver-date').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+    loadDriverShift(user.name);
   } else {
-    // Hide all admin pages, show driver page
+    // Admin / Reiss: show planner
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById('driver-page').classList.add('active');
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    showPage('planner');
   }
 }
 
-document.getElementById('mode-toggle-btn').addEventListener('click', () => {
-  if (isAdmin) {
-    setMode(false);
-  } else {
-    showPinScreen();
+window.addEventListener('message', e => {
+  if (e.origin !== 'https://i3rink.github.io') return;
+  if (e.data && e.data.type === 'HELM_USER' && e.data.user) {
+    applyHelmUser(e.data.user);
   }
 });
 
-// ── PIN SCREEN ──
-function showPinScreen() {
-  pinBuffer = '';
-  updatePinDots();
-  document.getElementById('pin-screen').classList.add('active');
-}
-function hidePinScreen() {
-  document.getElementById('pin-screen').classList.remove('active');
-  pinBuffer = '';
-  updatePinDots();
-}
+// ── DRIVER SHIFT — load active route from Helm by driver name ──
+async function loadDriverShift(driverName) {
+  const cards  = document.getElementById('driver-stop-cards');
+  const noStops = document.getElementById('driver-no-stops');
+  cards.innerHTML = '<div style="color:var(--muted);font-size:.9rem;padding:20px 0;">Loading your route…</div>';
+  noStops.style.display = 'none';
+  try {
+    const rows = await sbFetch(HELM_URL, HELM_KEY,
+      `routes?driver_name=eq.${encodeURIComponent(driverName)}&status=eq.active&order=created_at.desc&limit=1&select=id,stops,van_label,departure_time`
+    );
+    cards.innerHTML = '';
+    if (!rows || !rows.length) {
+      noStops.style.display = 'block';
+      return;
+    }
+    const route = rows[0];
+    const payload = typeof route.stops === 'string' ? JSON.parse(route.stops) : route.stops;
+    if (!payload || !payload.runs || !payload.runs[0]) {
+      noStops.style.display = 'block';
+      return;
+    }
+    const run = payload.runs[0];
+    const stops = run.stops || [];
+    if (!stops.length) { noStops.style.display = 'block'; return; }
 
-document.getElementById('pin-cancel').addEventListener('click', hidePinScreen);
+    // Summary pill
+    const vanLabel = route.van_label || payload.vanLabel || null;
+    const departTime = route.departure_time || payload.departTime || null;
+    const summaryEl = document.createElement('div');
+    summaryEl.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;';
+    if (vanLabel) summaryEl.innerHTML += `<div style="background:rgba(240,192,64,.12);color:var(--accent);border:1px solid rgba(240,192,64,.25);border-radius:4px;padding:4px 10px;font-size:12px;font-weight:700;">🚐 ${esc(vanLabel)}</div>`;
+    if (departTime) summaryEl.innerHTML += `<div style="background:rgba(100,140,220,.12);color:#88aaee;border:1px solid rgba(100,140,220,.25);border-radius:4px;padding:4px 10px;font-size:12px;font-weight:700;">🕗 Depart ${esc(departTime)}</div>`;
+    cards.appendChild(summaryEl);
 
-document.querySelectorAll('.pin-key[data-n]').forEach(btn => {
-  btn.addEventListener('click', () => {
-    if (pinBuffer.length >= 4) return;
-    pinBuffer += btn.dataset.n;
-    updatePinDots();
-    if (pinBuffer.length === 4) checkPin();
-  });
-});
-
-document.getElementById('pin-del').addEventListener('click', () => {
-  pinBuffer = pinBuffer.slice(0, -1);
-  updatePinDots();
-});
-
-// Hardware keyboard support on PIN screen
-document.addEventListener('keydown', e => {
-  if (!document.getElementById('pin-screen').classList.contains('active')) return;
-  if (/^[0-9]$/.test(e.key) && pinBuffer.length < 4) {
-    pinBuffer += e.key;
-    updatePinDots();
-    if (pinBuffer.length === 4) checkPin();
-  }
-  if (e.key === 'Backspace') { pinBuffer = pinBuffer.slice(0, -1); updatePinDots(); }
-  if (e.key === 'Escape') hidePinScreen();
-});
-
-function updatePinDots() {
-  for (let i = 0; i < 4; i++) {
-    const dot = document.getElementById(`pd${i}`);
-    dot.classList.toggle('filled', i < pinBuffer.length);
-    dot.classList.remove('error');
-  }
-}
-
-function checkPin() {
-  if (pinBuffer === ADMIN_PIN) {
-    hidePinScreen();
-    setMode(true);
-  } else {
-    for (let i = 0; i < 4; i++) document.getElementById(`pd${i}`).classList.add('error');
-    setTimeout(() => { pinBuffer = ''; updatePinDots(); }, 800);
+    stops.forEach((stop, i) => {
+      const pc    = stop.postcode || '—';
+      const door  = stop.door_number || '';
+      const ref   = stop.jobRef ? `Job #${stop.jobRef}` : '';
+      const dist  = stop.leg ? fmtDist(stop.leg.distKm) : '';
+      const arr   = (stop.leg && departTime) ? addMinsToTime(departTime,
+        stops.slice(0, i).reduce((a,s)=>a+(s.leg?s.leg.durMins:0),0) + i * STOP_DWELL
+      ) : null;
+      const mapsHref = `https://www.google.com/maps/search/${encodeURIComponent((door ? door + ', ' : '') + pc + ', UK')}`;
+      const card = document.createElement('div');
+      card.className = 'shift-card';
+      card.innerHTML = `
+        <div class="shift-card-num">Stop ${i + 1} of ${stops.length}</div>
+        <div class="shift-card-postcode">${esc(pc)}</div>
+        ${door ? `<div class="shift-card-door">🏠 ${esc(door)}</div>` : ''}
+        ${ref   ? `<div class="shift-card-jobref">${esc(ref)}</div>` : ''}
+        <div class="shift-card-meta">
+          ${dist ? `<span class="driver-tag dist">${esc(dist)}</span>` : ''}
+          ${arr  ? `<span class="driver-tag clock">~${esc(arr)}</span>` : ''}
+        </div>
+        <div class="shift-card-actions">
+          <a class="shift-btn-maps" href="${mapsHref}" target="_blank" rel="noopener">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+            Navigate
+          </a>
+        </div>
+      `;
+      cards.appendChild(card);
+    });
+  } catch (err) {
+    cards.innerHTML = `<div style="color:var(--danger);font-size:.9rem;padding:20px 0;">Could not load route: ${esc(err.message)}</div>`;
   }
 }
 
@@ -933,18 +881,22 @@ const vanCountInput = document.getElementById('van-count');
 
 function rebuildVanLabels() {
   const count = Math.max(1, Math.min(10, parseInt(vanCountInput.value) || 1));
-  vanLabelsGroup.style.display = count > 1 ? 'block' : 'none';
+  // Always show van details section
+  vanLabelsGroup.style.display = 'block';
   // Preserve existing values
-  const existing = Array.from(vanLabelsContainer.querySelectorAll('input')).map(i => i.value);
+  const existingRegs    = Array.from(vanLabelsContainer.querySelectorAll('.van-label-input')).map(i => i.value);
+  const existingDrivers = Array.from(vanLabelsContainer.querySelectorAll('.van-driver-input')).map(i => i.value);
   vanLabelsContainer.innerHTML = '';
   for (let i = 0; i < count; i++) {
     const row = document.createElement('div');
     row.className = 'field-row';
+    row.style.cssText = 'flex-direction:column;gap:6px;align-items:stretch;border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;background:var(--surface);';
     row.innerHTML = `
-      <div style="font-size:12px;font-weight:700;color:var(--muted);width:44px;flex-shrink:0;">Van ${i+1}</div>
-      <input type="text" class="van-label-input" placeholder="Enter reg number" value="${existing[i]||''}" autocomplete="off" spellcheck="false" style="text-transform:uppercase;">
+      ${count > 1 ? `<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Van ${i+1}</div>` : ''}
+      <input type="text" class="van-label-input" placeholder="Van reg (e.g. SG23 ABC)" value="${existingRegs[i]||''}" autocomplete="off" spellcheck="false" style="text-transform:uppercase;">
+      <input type="text" class="van-driver-input" placeholder="Driver name" value="${existingDrivers[i]||''}" autocomplete="off" spellcheck="false">
     `;
-    row.querySelector('input').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase(); });
+    row.querySelector('.van-label-input').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase(); });
     vanLabelsContainer.appendChild(row);
   }
 }
@@ -955,6 +907,12 @@ rebuildVanLabels();
 function getVanLabels() {
   return Array.from(vanLabelsContainer.querySelectorAll('.van-label-input')).map((el, i) =>
     el.value.trim() || `Van ${i + 1}`
+  );
+}
+
+function getDriverNames() {
+  return Array.from(vanLabelsContainer.querySelectorAll('.van-driver-input')).map(el =>
+    el.value.trim()
   );
 }
 
@@ -1163,7 +1121,7 @@ async function optimise() {
     });
   }
 
-  currentResult = { runs, startPc, departTime, returnToWh, vanCount, usingFallback, stops, vanLabels: getVanLabels(), allCoords, matrices };
+  currentResult = { runs, startPc, departTime, returnToWh, vanCount, usingFallback, stops, vanLabels: getVanLabels(), driverNames: getDriverNames(), allCoords, matrices };
   renderResults(currentResult);
   setStatus('');
   btn.disabled = false;
@@ -1523,6 +1481,7 @@ function moveStop(fromVan, fromStop, toVan) {
 
 function shareFromSplitBoard(vanIdx, vanLabels) {
   const label = vanLabels[vanIdx] || `Van ${vanIdx + 1}`;
+  const drivers = currentResult.driverNames || [];
   const stops = splitStops[vanIdx];
   if (!stops.length) { showModal('No stops', `<p style="color:var(--muted);font-size:14px;">${label} has no stops assigned.</p>`, [{label:'Close',fn:closeModal,style:'background:var(--surface);border:1px solid var(--border);color:var(--text);'}]); return; }
   const { startPc, departTime, returnToWh, usingFallback } = currentResult;
@@ -1532,6 +1491,7 @@ function shareFromSplitBoard(vanIdx, vanLabels) {
     runs: [{ stops, postcodes, returnLeg: null }],
     startPc, departTime, returnToWh,
     vanCount: 1, vanLabel: label,
+    driverName: drivers[vanIdx] || null,
     usingFallback, unit: useKm ? 'km' : 'mi'
   };
   showShareModalFromPayload(payload, label);
@@ -1546,14 +1506,16 @@ document.getElementById('btn-push-driver').addEventListener('click', () => {
 
 function buildPayload(vanIdx) {
   const run = currentResult.runs[vanIdx];
-  const labels = currentResult.vanLabels || [];
+  const labels  = currentResult.vanLabels  || [];
+  const drivers = currentResult.driverNames || [];
   return {
     runs: [run],
     startPc: currentResult.startPc,
     departTime: currentResult.departTime,
     returnToWh: currentResult.returnToWh,
     vanCount: 1,
-    vanLabel: labels[vanIdx] || (currentResult.runs.length > 1 ? `Van ${vanIdx + 1}` : null),
+    vanLabel:   labels[vanIdx]  || (currentResult.runs.length > 1 ? `Van ${vanIdx + 1}` : null),
+    driverName: drivers[vanIdx] || null,
     usingFallback: currentResult.usingFallback,
     unit: useKm ? 'km' : 'mi'
   };
