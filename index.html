@@ -1,4 +1,4 @@
-<!-- Haul v3.8.4 -->
+<!-- Haul v3.8.5 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -391,7 +391,7 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.8.4</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.8.5</span></div>
     <button id="btn-install">Install App</button>
   </header>
   <div id="ios-banner">To install Haul on your home screen: tap the Share button in Safari, then choose "Add to Home Screen".</div>
@@ -553,7 +553,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.8.4';
+const APP_VERSION = 'v3.8.5';
 document.getElementById('app-version').textContent = APP_VERSION;
 // ── SUPABASE CONFIG ──
 const HELM_URL = 'https://xjnrmltfruzwmnhxplzn.supabase.co';
@@ -693,7 +693,8 @@ function applyHelmUser(user) {
     // Admin / Reiss: show planner
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     showPage('planner');
-    fetchDriverNames(); // populate driver dropdown in van details
+    rebuildVanLabels(); // render immediately with empty dropdown
+    fetchDriverNames(); // then populate with real driver names
   }
 }
 
@@ -886,14 +887,18 @@ let cachedDriverNames = [];
 
 async function fetchDriverNames() {
   try {
+    // Get driver role ID
     const roles = await sbFetch(HELM_URL, HELM_KEY, `roles?name=eq.driver&select=id`);
-    if (!roles || !roles.length) return;
+    if (!roles || !roles.length) {
+      console.warn('No driver role found in Helm roles table');
+      return;
+    }
     const driverRoleId = roles[0].id;
     const users = await sbFetch(HELM_URL, HELM_KEY, `users?role_id=eq.${driverRoleId}&active=eq.true&select=name&order=name.asc`);
-    cachedDriverNames = (users || []).map(u => u.name);
-    rebuildVanLabels(); // re-render with real names
+    cachedDriverNames = (users || []).map(u => u.name).filter(Boolean);
+    rebuildVanLabels();
   } catch(e) {
-    console.warn('Could not load driver names:', e);
+    console.warn('Could not load driver names:', e.message);
   }
 }
 
