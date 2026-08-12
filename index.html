@@ -1,4 +1,4 @@
-<!-- Haul v3.8.6 -->
+<!-- Haul v3.8.7 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -239,6 +239,18 @@
     .leg-tag.time-tag { background: rgba(224,90,43,0.1); color: #f08060; border-color: rgba(224,90,43,0.2); }
     .leg-tag.arrive-tag { background: rgba(100,180,100,0.1); color: #88cc88; border-color: rgba(100,180,100,0.2); }
     .leg-tag.clock-tag { background: rgba(100,140,220,0.1); color: #88aaee; border-color: rgba(100,140,220,0.2); }
+    /* Delivery type badges */
+    .type-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: .4px; flex-shrink: 0; }
+    .type-badge.install  { background: rgba(0,117,171,.15); color: #4db8e8; border: 1px solid rgba(0,117,171,.3); }
+    .type-badge.remedial { background: rgba(245,158,11,.15); color: #f59e0b; border: 1px solid rgba(245,158,11,.3); }
+    .type-badge.goods_out { background: rgba(16,185,129,.15); color: #34d399; border: 1px solid rgba(16,185,129,.3); }
+    /* Expandable stop detail */
+    .stop-detail { display: none; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); }
+    .stop-detail.open { display: block; }
+    .stop-detail-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
+    .stop-return { margin-top: 6px; background: rgba(245,158,11,.08); border: 1px solid rgba(245,158,11,.2); border-radius: 4px; padding: 6px 10px; color: #f59e0b; font-size: 12px; font-weight: 600; }
+    #stop-list li { cursor: pointer; }
+    #stop-list li:hover { background: rgba(255,255,255,.03); }
 
     /* ── DRIVER VIEW STOP LIST ── */
     #driver-stop-list { list-style: none; margin-bottom: 24px; }
@@ -391,7 +403,7 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.8.6</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.8.7</span></div>
     <button id="btn-install">Install App</button>
   </header>
   <div id="ios-banner">To install Haul on your home screen: tap the Share button in Safari, then choose "Add to Home Screen".</div>
@@ -553,7 +565,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.8.6';
+const APP_VERSION = 'v3.8.7';
 document.getElementById('app-version').textContent = APP_VERSION;
 
 function esc(str) {
@@ -583,17 +595,29 @@ async function sbFetch(baseUrl, key, path, opts = {}) {
   return res.json();
 }
 
-// Look up job ref from Talli deliveries by postcode
-async function lookupJobRef(postcode) {
+// Look up stop data from Talli deliveries by postcode
+async function lookupStopData(postcode) {
   try {
     const s = postcode.trim().toUpperCase().replace(/\s+/g,'');
     const pc = s.length > 3 ? s.slice(0,-3) + ' ' + s.slice(-3) : s;
     const rows = await sbFetch(TALLI_URL, TALLI_KEY,
-      `deliveries?customer_postcode=eq.${encodeURIComponent(pc)}&select=job_ref&order=created_at.desc&limit=1`
+      `deliveries?customer_postcode=eq.${encodeURIComponent(pc)}&select=job_ref,source,door_number&order=created_at.desc&limit=1`
     );
-    if (rows && rows.length > 0 && rows[0].job_ref) return rows[0].job_ref;
+    if (rows && rows.length > 0) {
+      return {
+        jobRef:     rows[0].job_ref     || null,
+        source:     rows[0].source      || null,
+        doorNumber: rows[0].door_number || null,
+      };
+    }
   } catch {}
   return null;
+}
+
+// Legacy wrapper — kept for any existing calls
+async function lookupJobRef(postcode) {
+  const d = await lookupStopData(postcode);
+  return d ? d.jobRef : null;
 }
 
 // Save route to Helm Supabase, return route ID
@@ -861,20 +885,28 @@ function addStop(postcode='', jobRef='', doorNumber='') {
     if (idx < all.length - 1) { all[idx + 1].focus(); } else { addStop(); }
   });
 
-  // On blur, look up job ref from Talli and show as a tag
+  // On blur, look up stop data from Talli and populate fields
   pcInput.addEventListener('blur', async e => {
     const pc = normPC(e.target.value);
     if (!pc) return;
     const existing = row.querySelector('.job-ref-tag');
-    if (existing) existing.remove(); // refresh on re-entry
-    const ref = await lookupJobRef(pc);
-    if (ref) {
-      const tag = document.createElement('span');
-      tag.className = 'job-ref-tag';
-      tag.textContent = `#${ref}`;
-      tag.title = `Job ref from Talli`;
-      row.insertBefore(tag, row.querySelector('.btn-remove'));
-      row.dataset.jobRef = ref;
+    if (existing) existing.remove();
+    const data = await lookupStopData(pc);
+    if (data) {
+      if (data.jobRef) {
+        const tag = document.createElement('span');
+        tag.className = 'job-ref-tag';
+        tag.textContent = `#${data.jobRef}`;
+        tag.title = `Job ref from Talli`;
+        row.insertBefore(tag, row.querySelector('.btn-remove'));
+        row.dataset.jobRef = data.jobRef;
+      }
+      if (data.source) row.dataset.source = data.source;
+      // Auto-fill door number if Talli has it and field is empty
+      const doorInput = row.querySelector('.stop-door');
+      if (doorInput && !doorInput.value && data.doorNumber) {
+        doorInput.value = data.doorNumber;
+      }
     }
   });
 
@@ -1081,7 +1113,8 @@ async function optimise() {
   const rows = Array.from(stopsContainer.querySelectorAll('.field-row'));
   const stops = rows.map(r => ({
     postcode:   normPC(r.querySelector('.stop-postcode').value),
-    jobRef:     r.dataset.jobRef || '',
+    jobRef:     r.dataset.jobRef   || '',
+    source:     r.dataset.source   || '',
     doorNumber: (r.querySelector('.stop-door') ? r.querySelector('.stop-door').value.trim() : '')
   })).filter(s => s.postcode);
 
@@ -1208,6 +1241,13 @@ function renderResults({ runs, startPc, departTime, returnToWh, usingFallback, v
   document.getElementById('results').scrollIntoView({ behavior:'smooth' });
 }
 
+function typeBadge(source) {
+  if (!source) return '';
+  const labels = { install: 'Install', remedial: 'Remedial', goods_out: 'Goods Out' };
+  const cls = source.toLowerCase();
+  return `<span class="type-badge ${cls}">${labels[source] || source}</span>`;
+}
+
 function renderVanResult(run, startPc, departTime, returnToWh) {
   const list = document.getElementById('stop-list');
   list.innerHTML = '';
@@ -1215,16 +1255,78 @@ function renderVanResult(run, startPc, departTime, returnToWh) {
   liStart.innerHTML = `<div class="stop-num start-dot">S</div><div class="stop-info"><div class="stop-name">Warehouse</div><div class="stop-pc">${startPc} – 18 Macadam Place, Irvine${departTime?` · Departs ${departTime}`:''}</div></div>`;
   list.appendChild(liStart);
 
+
   let elapsed = 0;
-  run.stops.forEach((stop,i) => {
-    const driveMin=stop.leg.durMins, arriveMin=elapsed+driveMin, departMin=arriveMin+STOP_DWELL;
-    elapsed=departMin;
-    const clockTag=departTime?`<span class="leg-tag clock-tag">Arrive ${addMinsToTime(departTime,arriveMin)}</span>`:'';
-    const li=document.createElement('li');
+  run.stops.forEach((stop, i) => {
+    const driveMin = stop.leg.durMins, arriveMin = elapsed + driveMin, departMin = arriveMin + STOP_DWELL;
+    elapsed = departMin;
+    const arriveStr = departTime ? addMinsToTime(departTime, arriveMin) : null;
+    const li = document.createElement('li');
     li.draggable = true;
     li.dataset.postcode = stop.postcode;
-    li.innerHTML=`<div class="drag-handle">⠿</div><div class="stop-num">${i+1}</div><div class="stop-info"><div class="stop-name"><span>${stop.postcode}</span>${stop.doorNumber?`<span class="leg-tag" style="margin-left:6px;color:var(--muted);">🏠 ${esc(stop.doorNumber)}</span>`:''}${stop.jobRef?`<span class="leg-tag" style="margin-left:auto;">#${stop.jobRef}</span>`:''}</div><div class="leg-meta"><span class="leg-tag">${fmtDist(stop.leg.distKm)}</span><span class="leg-tag time-tag">${fmtMins(driveMin)} drive</span><span class="leg-tag arrive-tag">+${fmtMins(arriveMin)} from start</span>${clockTag}</div></div>`;
+
+    const dragHandle = document.createElement('div');
+    dragHandle.className = 'drag-handle';
+    dragHandle.textContent = '⠿';
+
+    const header = document.createElement('div');
+    header.style.cssText = 'display:flex;align-items:center;gap:8px;flex:1;min-width:0;';
+    header.innerHTML = `
+      <div class="stop-num">${i+1}</div>
+      <div class="stop-info" style="flex:1;min-width:0;">
+        <div class="stop-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span style="font-size:16px;font-weight:800;letter-spacing:1px;">${esc(stop.postcode)}</span>
+          ${stop.doorNumber ? `<span style="font-size:13px;color:var(--muted);">🏠 ${esc(stop.doorNumber)}</span>` : ''}
+          ${typeBadge(stop.source)}
+        </div>
+      </div>
+      <span style="font-size:11px;color:var(--muted);flex-shrink:0;">▾</span>
+    `;
+
+    const detail = document.createElement('div');
+    detail.className = 'stop-detail';
+    detail.innerHTML = `
+      <div class="stop-detail-row">
+        ${stop.jobRef ? `<span class="leg-tag">#${esc(stop.jobRef)}</span>` : ''}
+        <span class="leg-tag">${fmtDist(stop.leg.distKm)}</span>
+        <span class="leg-tag time-tag">${fmtMins(driveMin)} drive</span>
+        ${arriveStr ? `<span class="leg-tag clock-tag">Arrive ${esc(arriveStr)}</span>` : ''}
+      </div>
+      ${stop.source === 'remedial' ? `<div class="stop-return" id="return-${i}">⟳ Loading return item…</div>` : ''}
+    `;
+
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'display:flex;flex-direction:column;flex:1;min-width:0;';
+    wrapper.appendChild(header);
+    wrapper.appendChild(detail);
+
+    li.appendChild(dragHandle);
+    li.appendChild(wrapper);
+
+    li.addEventListener('click', async e => {
+      if (e.target.closest('.drag-handle')) return;
+      const isOpen = detail.classList.contains('open');
+      detail.classList.toggle('open');
+      const arrow = header.querySelector('span:last-child');
+      if (arrow) arrow.textContent = isOpen ? '▾' : '▴';
+      if (!isOpen && stop.source === 'remedial' && stop.jobRef) {
+        const returnEl = detail.querySelector(`#return-${i}`);
+        if (returnEl && returnEl.textContent.includes('Loading')) {
+          try {
+            const rows = await sbFetch(TALLI_URL, TALLI_KEY,
+              `remedials?job_ref=eq.${encodeURIComponent(stop.jobRef)}&select=return_item&limit=1`
+            );
+            returnEl.textContent = (rows && rows.length && rows[0].return_item)
+              ? `⟳ Collect: ${rows[0].return_item}`
+              : '⟳ No return item recorded';
+          } catch { returnEl.textContent = '⟳ Could not load return item'; }
+        }
+      }
+    });
+
     list.appendChild(li);
+  });
+
   });
 
   if (returnToWh && run.returnLeg) {
