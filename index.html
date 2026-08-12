@@ -1,4 +1,4 @@
-<!-- Haul v3.8.2 -->
+<!-- Haul v3.8.3 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -391,7 +391,7 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.8.2</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.8.3</span></div>
     <button id="btn-install">Install App</button>
   </header>
   <div id="ios-banner">To install Haul on your home screen: tap the Share button in Safari, then choose "Add to Home Screen".</div>
@@ -553,7 +553,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.8.2';
+const APP_VERSION = 'v3.8.3';
 document.getElementById('app-version').textContent = APP_VERSION;
 // ── SUPABASE CONFIG ──
 const HELM_URL = 'https://xjnrmltfruzwmnhxplzn.supabase.co';
@@ -826,13 +826,10 @@ function addStop(postcode='', jobRef='', doorNumber='') {
   stopCount++;
   const row = document.createElement('div');
   row.className = 'field-row';
-  row.style.cssText = 'flex-direction:column;gap:4px;align-items:stretch;';
   row.innerHTML = `
-    <div style="display:flex;gap:6px;align-items:center;">
-      <input type="text" class="stop-postcode" placeholder="Postcode" value="${postcode}" autocomplete="off" spellcheck="false" style="flex:1;width:auto;">
-      <button class="btn-remove" title="Remove" tabindex="-1">×</button>
-    </div>
-    <input type="text" class="stop-door" placeholder="Door / house number (optional)" value="${doorNumber}" autocomplete="off" spellcheck="false" style="font-size:12px;">
+    <input type="text" class="stop-postcode" placeholder="Postcode" value="${postcode}" autocomplete="off" spellcheck="false" style="flex:2;min-width:0;">
+    <input type="text" class="stop-door" placeholder="Door no." value="${doorNumber}" autocomplete="off" spellcheck="false" style="flex:1;min-width:0;font-size:13px;">
+    <button class="btn-remove" title="Remove" tabindex="-1">×</button>
   `;
   // If a jobRef was passed in (e.g. loading a saved route), show it immediately
   if (jobRef) {
