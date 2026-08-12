@@ -1,4 +1,4 @@
-<!-- Haul v3.8.3 -->
+<!-- Haul v3.8.4 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -391,7 +391,7 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.8.3</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.8.4</span></div>
     <button id="btn-install">Install App</button>
   </header>
   <div id="ios-banner">To install Haul on your home screen: tap the Share button in Safari, then choose "Add to Home Screen".</div>
@@ -553,7 +553,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.8.3';
+const APP_VERSION = 'v3.8.4';
 document.getElementById('app-version').textContent = APP_VERSION;
 // ── SUPABASE CONFIG ──
 const HELM_URL = 'https://xjnrmltfruzwmnhxplzn.supabase.co';
@@ -693,6 +693,7 @@ function applyHelmUser(user) {
     // Admin / Reiss: show planner
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     showPage('planner');
+    fetchDriverNames(); // populate driver dropdown in van details
   }
 }
 
@@ -880,11 +881,35 @@ const vanLabelsContainer = document.getElementById('van-labels-container');
 const vanLabelsGroup = document.getElementById('van-labels-group');
 const vanCountInput = document.getElementById('van-count');
 
+// Cache of driver names fetched from Helm
+let cachedDriverNames = [];
+
+async function fetchDriverNames() {
+  try {
+    const roles = await sbFetch(HELM_URL, HELM_KEY, `roles?name=eq.driver&select=id`);
+    if (!roles || !roles.length) return;
+    const driverRoleId = roles[0].id;
+    const users = await sbFetch(HELM_URL, HELM_KEY, `users?role_id=eq.${driverRoleId}&active=eq.true&select=name&order=name.asc`);
+    cachedDriverNames = (users || []).map(u => u.name);
+    rebuildVanLabels(); // re-render with real names
+  } catch(e) {
+    console.warn('Could not load driver names:', e);
+  }
+}
+
+function buildDriverSelect(selectedValue) {
+  const opts = cachedDriverNames.length
+    ? cachedDriverNames.map(n => `<option value="${esc(n)}" ${n === selectedValue ? 'selected' : ''}>${esc(n)}</option>`).join('')
+    : (selectedValue ? `<option value="${esc(selectedValue)}" selected>${esc(selectedValue)}</option>` : '');
+  return `<select class="van-driver-input" style="width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:${cachedDriverNames.length ? 'var(--text)' : 'var(--muted)'};padding:8px 10px;font-size:14px;font-family:var(--font);">
+    <option value="">Select driver…</option>
+    ${opts}
+  </select>`;
+}
+
 function rebuildVanLabels() {
   const count = Math.max(1, Math.min(10, parseInt(vanCountInput.value) || 1));
-  // Always show van details section
   vanLabelsGroup.style.display = 'block';
-  // Preserve existing values
   const existingRegs    = Array.from(vanLabelsContainer.querySelectorAll('.van-label-input')).map(i => i.value);
   const existingDrivers = Array.from(vanLabelsContainer.querySelectorAll('.van-driver-input')).map(i => i.value);
   vanLabelsContainer.innerHTML = '';
@@ -895,7 +920,7 @@ function rebuildVanLabels() {
     row.innerHTML = `
       ${count > 1 ? `<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Van ${i+1}</div>` : ''}
       <input type="text" class="van-label-input" placeholder="Van reg (e.g. SG23 ABC)" value="${existingRegs[i]||''}" autocomplete="off" spellcheck="false" style="text-transform:uppercase;">
-      <input type="text" class="van-driver-input" placeholder="Driver name" value="${existingDrivers[i]||''}" autocomplete="off" spellcheck="false">
+      ${buildDriverSelect(existingDrivers[i] || '')}
     `;
     row.querySelector('.van-label-input').addEventListener('input', e => { e.target.value = e.target.value.toUpperCase(); });
     vanLabelsContainer.appendChild(row);
