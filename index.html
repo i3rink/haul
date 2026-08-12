@@ -1,4 +1,4 @@
-<!-- Haul v3.8.1 -->
+<!-- Haul v3.8.2 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -391,7 +391,7 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.8.1</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.8.2</span></div>
     <button id="btn-install">Install App</button>
   </header>
   <div id="ios-banner">To install Haul on your home screen: tap the Share button in Safari, then choose "Add to Home Screen".</div>
@@ -553,7 +553,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.8.1';
+const APP_VERSION = 'v3.8.2';
 document.getElementById('app-version').textContent = APP_VERSION;
 // ── SUPABASE CONFIG ──
 const HELM_URL = 'https://xjnrmltfruzwmnhxplzn.supabase.co';
@@ -739,7 +739,7 @@ async function loadDriverShift(driverName) {
 
     stops.forEach((stop, i) => {
       const pc    = stop.postcode || '—';
-      const door  = stop.door_number || '';
+      const door  = stop.doorNumber || '';
       const ref   = stop.jobRef ? `Job #${stop.jobRef}` : '';
       const dist  = stop.leg ? fmtDist(stop.leg.distKm) : '';
       const arr   = (stop.leg && departTime) ? addMinsToTime(departTime,
@@ -821,14 +821,18 @@ history.replaceState({ tab: 'planner' }, '', location.href);
 const stopsContainer = document.getElementById('stops-container');
 let stopCount = 0;
 
-function addStop(postcode='', jobRef='') {
+function addStop(postcode='', jobRef='', doorNumber='') {
   if (stopCount >= 20) return;
   stopCount++;
   const row = document.createElement('div');
   row.className = 'field-row';
+  row.style.cssText = 'flex-direction:column;gap:4px;align-items:stretch;';
   row.innerHTML = `
-    <input type="text" class="stop-postcode" placeholder="Postcode" value="${postcode}" autocomplete="off" spellcheck="false" style="flex:1;width:auto;">
-    <button class="btn-remove" title="Remove" tabindex="-1">×</button>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <input type="text" class="stop-postcode" placeholder="Postcode" value="${postcode}" autocomplete="off" spellcheck="false" style="flex:1;width:auto;">
+      <button class="btn-remove" title="Remove" tabindex="-1">×</button>
+    </div>
+    <input type="text" class="stop-door" placeholder="Door / house number (optional)" value="${doorNumber}" autocomplete="off" spellcheck="false" style="font-size:12px;">
   `;
   // If a jobRef was passed in (e.g. loading a saved route), show it immediately
   if (jobRef) {
@@ -1043,8 +1047,9 @@ async function optimise() {
 
   const rows = Array.from(stopsContainer.querySelectorAll('.field-row'));
   const stops = rows.map(r => ({
-    postcode: normPC(r.querySelector('.stop-postcode').value),
-    jobRef: r.dataset.jobRef || ''
+    postcode:   normPC(r.querySelector('.stop-postcode').value),
+    jobRef:     r.dataset.jobRef || '',
+    doorNumber: (r.querySelector('.stop-door') ? r.querySelector('.stop-door').value.trim() : '')
   })).filter(s => s.postcode);
 
   if (stops.length < 2) { setStatus('Add at least 2 stops.', true); btn.disabled=false; return; }
@@ -1185,7 +1190,7 @@ function renderVanResult(run, startPc, departTime, returnToWh) {
     const li=document.createElement('li');
     li.draggable = true;
     li.dataset.postcode = stop.postcode;
-    li.innerHTML=`<div class="drag-handle">⠿</div><div class="stop-num">${i+1}</div><div class="stop-info"><div class="stop-name"><span>${stop.postcode}</span>${stop.jobRef?`<span class="leg-tag" style="margin-left:auto;">#${stop.jobRef}</span>`:''}</div><div class="leg-meta"><span class="leg-tag">${fmtDist(stop.leg.distKm)}</span><span class="leg-tag time-tag">${fmtMins(driveMin)} drive</span><span class="leg-tag arrive-tag">+${fmtMins(arriveMin)} from start</span>${clockTag}</div></div>`;
+    li.innerHTML=`<div class="drag-handle">⠿</div><div class="stop-num">${i+1}</div><div class="stop-info"><div class="stop-name"><span>${stop.postcode}</span>${stop.doorNumber?`<span class="leg-tag" style="margin-left:6px;color:var(--muted);">🏠 ${esc(stop.doorNumber)}</span>`:''}${stop.jobRef?`<span class="leg-tag" style="margin-left:auto;">#${stop.jobRef}</span>`:''}</div><div class="leg-meta"><span class="leg-tag">${fmtDist(stop.leg.distKm)}</span><span class="leg-tag time-tag">${fmtMins(driveMin)} drive</span><span class="leg-tag arrive-tag">+${fmtMins(arriveMin)} from start</span>${clockTag}</div></div>`;
     list.appendChild(li);
   });
 
@@ -1824,7 +1829,7 @@ function renderSavedRoutes() {
 
 function loadSavedRoute(route) {
   stopsContainer.innerHTML=''; stopCount=0;
-  route.stops.forEach(s=>addStop(s.postcode, s.jobRef||''));
+  route.stops.forEach(s=>addStop(s.postcode, s.jobRef||'', s.doorNumber||''));
   showPage('planner');
   window.scrollTo({top:0,behavior:'smooth'});
 }
