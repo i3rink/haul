@@ -1,4 +1,4 @@
-<!-- Haul v3.8.7 -->
+<!-- Haul v3.8.9 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -403,8 +403,11 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.8.7</span></div>
-    <button id="btn-install">Install App</button>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.8.9</span></div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button id="btn-back-helm" onclick="window.parent.postMessage({type:'HAUL_NAV',action:'go-home'},'https://i3rink.github.io')" style="display:none;background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);font-size:13px;font-weight:600;padding:7px 12px;cursor:pointer;">← Helm</button>
+      <button id="btn-install">Install App</button>
+    </div>
   </header>
   <div id="ios-banner">To install Haul on your home screen: tap the Share button in Safari, then choose "Add to Home Screen".</div>
 
@@ -565,7 +568,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.8.7';
+const APP_VERSION = 'v3.8.9';
 document.getElementById('app-version').textContent = APP_VERSION;
 
 function esc(str) {
@@ -708,6 +711,9 @@ let helmUser = null;
 function applyHelmUser(user) {
   helmUser = user;
   const isDriver = user.role_name && user.role_name.toLowerCase() === 'driver';
+  // Show back button whenever running inside Helm
+  const backBtn = document.getElementById('btn-back-helm');
+  if (backBtn) backBtn.style.display = 'block';
 
   // Show/hide tab bar (admin planner) vs driver shift view
   document.getElementById('tab-bar').style.display = isDriver ? 'none' : 'flex';
@@ -734,6 +740,11 @@ window.addEventListener('message', e => {
     applyHelmUser(e.data.user);
   }
 });
+
+// Signal to Helm that Haul is ready to receive user context
+try {
+  window.parent.postMessage({ type: 'HAUL_READY' }, 'https://i3rink.github.io');
+} catch(e) {}
 
 // ── DRIVER SHIFT — load active route from Helm by driver name ──
 async function loadDriverShift(driverName) {
