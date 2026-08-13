@@ -1,4 +1,4 @@
-<!-- Haul v3.8.12 -->
+<!-- Haul v3.8.13 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -403,7 +403,7 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.8.12</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.8.13</span></div>
     <div style="display:flex;align-items:center;gap:10px;">
       <button id="btn-back-helm" onclick="window.parent.postMessage({type:'HAUL_NAV',action:'go-home'},'https://i3rink.github.io')" style="display:none;background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);font-size:13px;font-weight:600;padding:7px 12px;cursor:pointer;">← Helm</button>
       <button id="btn-install">Install App</button>
@@ -568,7 +568,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.8.12';
+const APP_VERSION = 'v3.8.13';
 document.getElementById('app-version').textContent = APP_VERSION;
 
 function esc(str) {
@@ -725,6 +725,8 @@ function applyHelmUser(user) {
     document.getElementById('driver-greeting').textContent = `Hello, ${user.name.split(' ')[0]}.`;
     document.getElementById('driver-date').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
     loadDriverShift(user.name);
+    // Tell Helm to clear the badge dot on the Haul module card
+    window.parent.postMessage({ type: 'HAUL_CLEAR_BADGE' }, 'https://i3rink.github.io');
   } else {
     // Admin / Reiss: show planner
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
