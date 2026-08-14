@@ -1,4 +1,4 @@
-<!-- Haul v3.9.1 -->
+<!-- Haul v3.9.2 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -513,7 +513,7 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.9.1</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.9.2</span></div>
     <div style="display:flex;align-items:center;gap:10px;">
       <button id="btn-back-helm" onclick="window.parent.postMessage({type:'HAUL_NAV',action:'go-home'},'https://i3rink.github.io')" style="display:none;background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);font-size:13px;font-weight:600;padding:7px 12px;cursor:pointer;">← Helm</button>
       <button id="btn-install">Install App</button>
@@ -689,7 +689,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.9.1';
+const APP_VERSION = 'v3.9.2';
 document.getElementById('app-version').textContent = APP_VERSION;
 
 function esc(str) {
@@ -2403,10 +2403,12 @@ async function openDeliveryFlow(postcode, jobRef, door) {
 
   // Fetch session items from Talli
   // sessions.jobs is a jsonb array of Q-refs e.g. ["Q1862","Q1873"]
+  // deliveries.job_ref may be stored as bare numeric e.g. "1946" — normalise to Q-prefix for sessions lookup
   // master_list is a jsonb array of item objects, each with jobQtys keyed by Q-ref
   try {
     if (jobRef) {
-      const encoded = encodeURIComponent(JSON.stringify([jobRef]));
+      const normJobRef = /^\d+$/.test(jobRef) ? 'Q' + jobRef : jobRef;
+      const encoded = encodeURIComponent(JSON.stringify([normJobRef]));
       const rows = await sbFetch(TALLI_URL, TALLI_KEY,
         `sessions?jobs=cs.${encoded}&select=id,master_list&order=created_at.desc&limit=1`
       );
@@ -2416,14 +2418,15 @@ async function openDeliveryFlow(postcode, jobRef, door) {
         const masterList = Array.isArray(ml) ? ml :
           (typeof ml === 'string' ? JSON.parse(ml) : []);
         // Filter to items relevant to this job ref; use per-job qty from jobQtys
+        // jobQtys keys use Q-prefix format — match using normJobRef
         dflow.items = masterList
-          .filter(item => item.jobQtys && item.jobQtys[jobRef] !== undefined)
+          .filter(item => item.jobQtys && item.jobQtys[normJobRef] !== undefined)
           .map(item => ({
             key:          item.key  || '',
             name:         item.name || item.key || 'Unknown item',
-            pickedQty:    item.jobQtys[jobRef],
+            pickedQty:    item.jobQtys[normJobRef],
             status:       'delivered',
-            deliveredQty: item.jobQtys[jobRef],
+            deliveredQty: item.jobQtys[normJobRef],
           }));
       }
     }
