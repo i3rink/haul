@@ -1,4 +1,4 @@
-<!-- Haul v3.8.13 -->
+<!-- Haul v3.9.0 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -382,6 +382,116 @@
       #stop-list li, #driver-stop-list li { border-bottom: 1px solid #ddd; }
     }
 
+    /* ── DELIVERY FLOW OVERLAY ── */
+    #delivery-overlay {
+      display: none; position: fixed; inset: 0; background: var(--bg);
+      z-index: 500; overflow-y: auto;
+    }
+    #delivery-overlay.active { display: block; }
+    .dflow-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px; background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .dflow-header h2 { font-size: 16px; font-weight: 700; flex: 1; }
+    .dflow-back {
+      background: none; border: 1px solid var(--border);
+      border-radius: var(--radius); color: var(--muted);
+      font-size: 13px; font-weight: 600; padding: 6px 12px; cursor: pointer;
+    }
+    .dflow-body { padding: 16px; max-width: 600px; margin: 0 auto 60px; }
+    .dflow-section-title {
+      font-size: 11px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--muted); margin: 20px 0 10px;
+    }
+    /* item checklist */
+    .item-row {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px;
+    }
+    .item-row-name { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+    .item-qty-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .item-status-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+    .item-status-btn {
+      background: none; border: 1px solid var(--border);
+      border-radius: 4px; color: var(--muted);
+      font-size: 12px; font-weight: 600; padding: 4px 10px; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .item-status-btn.active-delivered { background: var(--green); color: #000; border-color: var(--green); }
+    .item-status-btn.active-short     { background: var(--accent); color: #000; border-color: var(--accent); }
+    .item-status-btn.active-not       { background: var(--danger); color: #fff; border-color: var(--danger); }
+    .item-short-qty { margin-top: 8px; }
+    .item-short-qty input { width: 100px; }
+    /* sign-off */
+    .dflow-label { font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block; }
+    .dflow-input {
+      width: 100%; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); color: var(--text);
+      font-size: 15px; padding: 10px 12px; font-family: var(--font);
+      outline: none; transition: border-color 0.15s; box-sizing: border-box;
+    }
+    .dflow-input:focus { border-color: var(--accent); }
+    .dflow-select {
+      width: 100%; background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); color: var(--text);
+      font-size: 15px; padding: 10px 12px; font-family: var(--font);
+      outline: none; appearance: none; cursor: pointer;
+    }
+    .dflow-radio-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .dflow-radio-btn {
+      flex: 1; min-width: 80px; padding: 10px 8px; text-align: center;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); font-size: 13px; font-weight: 600;
+      color: var(--muted); cursor: pointer; transition: all 0.15s;
+    }
+    .dflow-radio-btn.selected { border-color: var(--accent); color: var(--accent); background: rgba(240,192,64,.08); }
+    /* photos */
+    .photo-previews { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .photo-thumb {
+      width: 72px; height: 72px; object-fit: cover;
+      border-radius: 6px; border: 1px solid var(--border);
+    }
+    .photo-add-btn {
+      width: 72px; height: 72px; background: var(--surface);
+      border: 1px dashed var(--border); border-radius: 6px;
+      color: var(--muted); font-size: 24px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .photo-add-btn:hover { border-color: var(--accent); color: var(--accent); }
+    /* signature */
+    #sig-canvas {
+      display: block; width: 100%; height: 180px;
+      background: #fff; border-radius: var(--radius);
+      border: 1px solid var(--border); touch-action: none; cursor: crosshair;
+    }
+    .sig-actions { display: flex; justify-content: flex-end; padding: 6px 0; }
+    .sig-clear {
+      background: none; border: none; color: var(--muted);
+      font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--font);
+    }
+    /* submit */
+    .dflow-submit {
+      width: 100%; padding: 15px; background: var(--accent); color: #0f0f1a;
+      font-size: 16px; font-weight: 700; border: none;
+      border-radius: var(--radius); cursor: pointer; margin-top: 12px;
+      transition: opacity 0.15s;
+    }
+    .dflow-submit:disabled { opacity: 0.45; cursor: not-allowed; }
+    .dflow-success {
+      text-align: center; padding: 60px 24px;
+    }
+    .dflow-success .success-icon { font-size: 56px; margin-bottom: 16px; }
+    .dflow-success h3 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+    .dflow-success p { font-size: 14px; color: var(--muted); margin-bottom: 24px; }
+    .dflow-done-btn {
+      padding: 13px 32px; background: var(--accent); color: #0f0f1a;
+      font-size: 15px; font-weight: 700; border: none;
+      border-radius: var(--radius); cursor: pointer;
+    }
+
     /* ── EASTER EGG ── */
     #egg-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
     #egg-overlay.active { display: flex; }
@@ -403,7 +513,7 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.8.13</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.9.0</span></div>
     <div style="display:flex;align-items:center;gap:10px;">
       <button id="btn-back-helm" onclick="window.parent.postMessage({type:'HAUL_NAV',action:'go-home'},'https://i3rink.github.io')" style="display:none;background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);font-size:13px;font-weight:600;padding:7px 12px;cursor:pointer;">← Helm</button>
       <button id="btn-install">Install App</button>
@@ -442,6 +552,17 @@
       Open in Google Maps
     </a>
     <ul id="driver-stop-list"></ul>
+  </div>
+</div>
+
+<!-- ── DELIVERY FLOW OVERLAY ── -->
+<div id="delivery-overlay">
+  <div class="dflow-header">
+    <button class="dflow-back" id="dflow-back-btn">← Back</button>
+    <h2 id="dflow-title">Confirm Delivery</h2>
+  </div>
+  <div class="dflow-body" id="dflow-body">
+    <!-- dynamically rendered -->
   </div>
 </div>
 
@@ -568,7 +689,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.8.13';
+const APP_VERSION = 'v3.9.0';
 document.getElementById('app-version').textContent = APP_VERSION;
 
 function esc(str) {
@@ -802,6 +923,9 @@ async function loadDriverShift(driverName) {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
             Navigate
           </a>
+          <button class="shift-btn-confirm" data-action="open-delivery" data-postcode="${esc(pc)}" data-jobref="${esc(stop.jobRef || '')}" data-door="${esc(door)}" style="background:var(--accent);color:#0f0f1a;border:none;border-radius:var(--radius);font-size:13px;font-weight:700;padding:8px 14px;cursor:pointer;">
+            Confirm delivery
+          </button>
         </div>
       `;
       cards.appendChild(card);
@@ -2184,6 +2308,550 @@ document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.targe
     if(e.code==='ArrowUp'){e.preventDefault();if(player.onGround){player.vy=-8;player.onGround=false;}}
   });
 })();
+
+// ── DELIVERY CONFIRMATION FLOW ────────────────────────────────────────────
+
+// State for the current delivery flow
+const dflow = {
+  postcode:   '',
+  jobRef:     '',
+  door:       '',
+  sessionId:  null,
+  items:      [],      // { key, name, pickedQty, status, deliveredQty }
+  photos:     [],      // File objects
+  sigDataUrl: null,
+  sigPainting: false,
+  sigLastX:   0,
+  sigLastY:   0,
+};
+
+// ── Image compression (borrowed from Fitters) ────────────────────────────
+function compressImage(file, maxPx, quality) {
+  maxPx   = maxPx   || 1200;
+  quality = quality || 0.70;
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var img = new Image();
+      img.onload = function() {
+        var w = img.width, h = img.height;
+        if (w > maxPx || h > maxPx) {
+          if (w > h) { h = Math.round(h * maxPx / w); w = maxPx; }
+          else       { w = Math.round(w * maxPx / h); h = maxPx; }
+        }
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        canvas.toBlob(function(blob) { resolve(blob); }, 'image/jpeg', quality);
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadToStorageTalli(bucket, folder, file) {
+  var blob = await compressImage(file);
+  var filename = folder + '/' + Date.now() + '_' + Math.random().toString(36).slice(2) + '.jpg';
+  var res = await fetch(TALLI_URL + '/storage/v1/object/' + bucket + '/' + filename, {
+    method: 'POST',
+    headers: {
+      'apikey':        TALLI_KEY,
+      'Authorization': 'Bearer ' + TALLI_KEY,
+      'Content-Type':  'image/jpeg',
+    },
+    body: blob,
+  });
+  if (!res.ok) { var e = await res.text(); throw new Error(e); }
+  return TALLI_URL + '/storage/v1/object/public/' + bucket + '/' + filename;
+}
+
+async function uploadBlobToStorageTalli(bucket, folder, blob, ext) {
+  ext = ext || 'jpg';
+  var filename = folder + '/' + Date.now() + '_' + Math.random().toString(36).slice(2) + '.' + ext;
+  var res = await fetch(TALLI_URL + '/storage/v1/object/' + bucket + '/' + filename, {
+    method: 'POST',
+    headers: {
+      'apikey':        TALLI_KEY,
+      'Authorization': 'Bearer ' + TALLI_KEY,
+      'Content-Type':  'image/' + ext,
+    },
+    body: blob,
+  });
+  if (!res.ok) { var e = await res.text(); throw new Error(e); }
+  return TALLI_URL + '/storage/v1/object/public/' + bucket + '/' + filename;
+}
+
+// ── Open delivery flow for a stop ────────────────────────────────────────
+async function openDeliveryFlow(postcode, jobRef, door) {
+  dflow.postcode  = postcode || '';
+  dflow.jobRef    = jobRef   || '';
+  dflow.door      = door     || '';
+  dflow.sessionId = null;
+  dflow.items     = [];
+  dflow.photos    = [];
+  dflow.sigDataUrl = null;
+
+  const overlay = document.getElementById('delivery-overlay');
+  const body    = document.getElementById('dflow-body');
+  document.getElementById('dflow-title').textContent = 'Confirm Delivery' + (postcode ? ' — ' + postcode : '');
+
+  overlay.classList.add('active');
+  body.innerHTML = '<div style="color:var(--muted);font-size:.9rem;padding:40px 0;text-align:center;">Loading items…</div>';
+
+  // Fetch session items from Talli
+  try {
+    if (jobRef) {
+      const rows = await sbFetch(TALLI_URL, TALLI_KEY,
+        `sessions?job_ref=eq.${encodeURIComponent(jobRef)}&select=id,master_list&order=created_at.desc&limit=1`
+      );
+      if (rows && rows.length > 0) {
+        dflow.sessionId = rows[0].id;
+        const ml = rows[0].master_list;
+        const masterList = typeof ml === 'string' ? JSON.parse(ml) : (ml || {});
+        // master_list is an object keyed by item key
+        dflow.items = Object.entries(masterList).map(([key, item]) => ({
+          key:          key,
+          name:         item.name || item.description || key,
+          pickedQty:    item.quantity || item.qty || 1,
+          status:       'delivered',
+          deliveredQty: item.quantity || item.qty || 1,
+        }));
+      }
+    }
+  } catch(err) {
+    console.warn('Session fetch failed:', err);
+  }
+
+  renderDflowStep1();
+}
+
+// ── Step 1: item checklist ────────────────────────────────────────────────
+function renderDflowStep1() {
+  const body = document.getElementById('dflow-body');
+  let html = '<div class="dflow-section-title">Items</div>';
+
+  if (!dflow.items.length) {
+    html += '<div style="color:var(--muted);font-size:13px;padding:12px 0;">No items found for this job ref. You can still complete the sign-off below.</div>';
+  } else {
+    dflow.items.forEach((item, idx) => {
+      html += `
+        <div class="item-row" id="item-row-${idx}">
+          <div class="item-row-name">${esc(item.name)}</div>
+          <div class="item-qty-label">Picked qty: ${esc(String(item.pickedQty))}</div>
+          <div class="item-status-btns">
+            <button class="item-status-btn active-delivered" data-action="item-status" data-idx="${idx}" data-status="delivered">Delivered</button>
+            <button class="item-status-btn" data-action="item-status" data-idx="${idx}" data-status="short">Short</button>
+            <button class="item-status-btn" data-action="item-status" data-idx="${idx}" data-status="not">Not delivered</button>
+          </div>
+          <div class="item-short-qty" id="short-qty-${idx}" style="display:none;">
+            <input class="dflow-input" type="number" min="0" id="short-input-${idx}" placeholder="Qty actually delivered" style="width:180px;">
+          </div>
+        </div>`;
+    });
+  }
+
+  html += `
+    <div style="margin-top:24px;">
+      <button class="dflow-submit" id="dflow-next-btn" data-action="dflow-next">Continue to sign-off →</button>
+    </div>`;
+
+  body.innerHTML = html;
+}
+
+// ── Step 2: sign-off form ────────────────────────────────────────────────
+function renderDflowStep2() {
+  // Read item statuses back from DOM before switching
+  dflow.items.forEach((item, idx) => {
+    const row = document.getElementById('item-row-' + idx);
+    if (!row) return;
+    const activeBtns = row.querySelectorAll('.item-status-btn.active-delivered, .item-status-btn.active-short, .item-status-btn.active-not');
+    if (activeBtns.length) {
+      const st = activeBtns[0].dataset.status;
+      item.status = st;
+      if (st === 'short') {
+        const inp = document.getElementById('short-input-' + idx);
+        item.deliveredQty = inp ? (parseInt(inp.value, 10) || 0) : 0;
+      } else if (st === 'delivered') {
+        item.deliveredQty = item.pickedQty;
+      } else {
+        item.deliveredQty = 0;
+      }
+    }
+  });
+
+  const body = document.getElementById('dflow-body');
+  const hasPartial = dflow.items.some(i => i.status === 'short' || i.status === 'not');
+
+  body.innerHTML = `
+    <div class="dflow-section-title">Sign-off details</div>
+
+    <div style="margin-bottom:14px;">
+      <label class="dflow-label">Customer postcode</label>
+      <input class="dflow-input" id="dflow-postcode" type="text" value="${esc(dflow.postcode)}" placeholder="e.g. KA26 0EX" style="text-transform:uppercase;">
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <label class="dflow-label">Delivery team</label>
+      <input class="dflow-input" id="dflow-team" type="text" placeholder="e.g. Mark, Kenny">
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <label class="dflow-label">Delivery status</label>
+      <div class="dflow-radio-group" id="dflow-status-group">
+        <div class="dflow-radio-btn ${!hasPartial ? 'selected' : ''}" data-action="dflow-status" data-val="full">Full delivery</div>
+        <div class="dflow-radio-btn ${hasPartial ? 'selected' : ''}" data-action="dflow-status" data-val="partial">Partial</div>
+        <div class="dflow-radio-btn" data-action="dflow-status" data-val="failed">Failed</div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <label class="dflow-label">Customer present?</label>
+      <div class="dflow-radio-group" id="dflow-present-group">
+        <div class="dflow-radio-btn selected" data-action="dflow-present" data-val="yes">Yes</div>
+        <div class="dflow-radio-btn" data-action="dflow-present" data-val="no">No</div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <label class="dflow-label">Notes</label>
+      <textarea class="dflow-input" id="dflow-notes" rows="3" placeholder="Any notes about this delivery…" style="resize:vertical;"></textarea>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <label class="dflow-label">Photos of materials on site</label>
+      <div class="photo-previews" id="photo-previews">
+        <div class="photo-add-btn" data-action="add-photo">+</div>
+      </div>
+      <input type="file" id="photo-file-input" accept="image/*" multiple style="display:none;">
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <label class="dflow-label">Customer signature</label>
+      <canvas id="sig-canvas"></canvas>
+      <div class="sig-actions">
+        <button class="sig-clear" data-action="sig-clear">Clear signature</button>
+      </div>
+    </div>
+
+    <button class="dflow-submit" id="dflow-submit-btn" data-action="dflow-submit">Submit delivery</button>
+    <div id="dflow-submit-status" style="margin-top:10px;font-size:13px;color:var(--muted);text-align:center;min-height:20px;"></div>
+  `;
+
+  initSigCanvas();
+}
+
+// ── Signature canvas ────────────────────────────────────────────────────
+function initSigCanvas() {
+  const canvas = document.getElementById('sig-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    canvas.width  = rect.width;
+    canvas.height = 180;
+  }
+  resize();
+
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const src  = e.touches ? e.touches[0] : e;
+    return { x: src.clientX - rect.left, y: src.clientY - rect.top };
+  }
+
+  canvas.addEventListener('mousedown',  e => { dflow.sigPainting = true; const p = getPos(e); dflow.sigLastX = p.x; dflow.sigLastY = p.y; });
+  canvas.addEventListener('mousemove',  e => {
+    if (!dflow.sigPainting) return;
+    const p = getPos(e);
+    ctx.beginPath(); ctx.moveTo(dflow.sigLastX, dflow.sigLastY);
+    ctx.lineTo(p.x, p.y); ctx.strokeStyle = '#111'; ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round'; ctx.stroke();
+    dflow.sigLastX = p.x; dflow.sigLastY = p.y;
+  });
+  canvas.addEventListener('mouseup',   () => { dflow.sigPainting = false; });
+  canvas.addEventListener('mouseleave',() => { dflow.sigPainting = false; });
+
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); dflow.sigPainting = true; const p = getPos(e); dflow.sigLastX = p.x; dflow.sigLastY = p.y; }, { passive: false });
+  canvas.addEventListener('touchmove',  e => {
+    e.preventDefault();
+    if (!dflow.sigPainting) return;
+    const p = getPos(e);
+    ctx.beginPath(); ctx.moveTo(dflow.sigLastX, dflow.sigLastY);
+    ctx.lineTo(p.x, p.y); ctx.strokeStyle = '#111'; ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round'; ctx.stroke();
+    dflow.sigLastX = p.x; dflow.sigLastY = p.y;
+  }, { passive: false });
+  canvas.addEventListener('touchend', () => { dflow.sigPainting = false; });
+}
+
+// ── Submit delivery ─────────────────────────────────────────────────────
+async function submitDelivery() {
+  const submitBtn = document.getElementById('dflow-submit-btn');
+  const statusEl  = document.getElementById('dflow-submit-status');
+
+  submitBtn.disabled = true;
+  statusEl.textContent = 'Uploading photos…';
+
+  try {
+    // 1. Read form values
+    const postcode       = (document.getElementById('dflow-postcode').value || '').trim().toUpperCase();
+    const team           = (document.getElementById('dflow-team').value     || '').trim();
+    const deliveryStatus = document.querySelector('[data-action="dflow-status"].selected')?.dataset.val  || 'full';
+    const custPresent    = document.querySelector('[data-action="dflow-present"].selected')?.dataset.val || 'yes';
+    const notes          = (document.getElementById('dflow-notes').value || '').trim();
+
+    // 2. Upload photos
+    let photoUrls = [];
+    if (dflow.photos.length > 0) {
+      for (let i = 0; i < dflow.photos.length; i++) {
+        statusEl.textContent = `Uploading photo ${i + 1} of ${dflow.photos.length}…`;
+        const url = await uploadToStorageTalli('showroom-images', 'deliveries', dflow.photos[i]);
+        photoUrls.push(url);
+      }
+    }
+
+    // 3. Upload signature
+    let signatureUrl = null;
+    const canvas = document.getElementById('sig-canvas');
+    if (canvas) {
+      statusEl.textContent = 'Uploading signature…';
+      const sigBlob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+      if (sigBlob && sigBlob.size > 1000) { // only if actually drawn on
+        signatureUrl = await uploadBlobToStorageTalli('showroom-images', 'deliveries', sigBlob, 'png');
+      }
+    }
+
+    // 4. Write deliveries rows (one per item, or one summary row if no items)
+    statusEl.textContent = 'Saving delivery records…';
+    const driverName = helmUser ? helmUser.name : '';
+    const normPC     = postcode.replace(/\s+/g,'');
+    const formattedPC = normPC.length > 3 ? normPC.slice(0,-3) + ' ' + normPC.slice(-3) : normPC;
+
+    if (dflow.items.length > 0) {
+      for (const item of dflow.items) {
+        const shortfall = Math.max(0, item.pickedQty - item.deliveredQty);
+        await sbFetch(TALLI_URL, TALLI_KEY, 'deliveries', {
+          method: 'POST',
+          prefer: 'return=minimal',
+          body: JSON.stringify({
+            session_id:        dflow.sessionId,
+            job_ref:           dflow.jobRef || null,
+            item_key:          item.key,
+            item_name:         item.name,
+            picked_qty:        item.pickedQty,
+            delivered_qty:     item.deliveredQty,
+            shortfall:         shortfall,
+            driver_name:       driverName,
+            driver_note:       notes || null,
+            customer_postcode: formattedPC || null,
+            delivery_team:     team || null,
+            delivery_status:   deliveryStatus,
+            notes:             notes || null,
+            photo_url:         photoUrls.length ? photoUrls[0] : null,
+            customer_present:  custPresent,
+            signature_url:     signatureUrl,
+            is_remedial:       false,
+            door_number:       dflow.door || null,
+            source:            'driver',
+          }),
+        });
+
+        // If short or not delivered, write a remedial flag row
+        if (item.status === 'short' || item.status === 'not') {
+          await sbFetch(TALLI_URL, TALLI_KEY, 'deliveries', {
+            method: 'POST',
+            prefer: 'return=minimal',
+            body: JSON.stringify({
+              session_id:        dflow.sessionId,
+              job_ref:           dflow.jobRef || null,
+              item_key:          item.key,
+              item_name:         item.name,
+              picked_qty:        item.pickedQty,
+              delivered_qty:     item.deliveredQty,
+              shortfall:         shortfall,
+              driver_name:       driverName,
+              driver_note:       notes || null,
+              customer_postcode: formattedPC || null,
+              delivery_team:     team || null,
+              delivery_status:   deliveryStatus,
+              notes:             notes || null,
+              customer_present:  custPresent,
+              is_remedial:       true,
+              door_number:       dflow.door || null,
+              source:            'driver',
+            }),
+          });
+        }
+      }
+    } else {
+      // No items — write single summary row
+      await sbFetch(TALLI_URL, TALLI_KEY, 'deliveries', {
+        method: 'POST',
+        prefer: 'return=minimal',
+        body: JSON.stringify({
+          session_id:        dflow.sessionId,
+          job_ref:           dflow.jobRef || null,
+          driver_name:       driverName,
+          customer_postcode: formattedPC || null,
+          delivery_team:     team || null,
+          delivery_status:   deliveryStatus,
+          notes:             notes || null,
+          photo_url:         photoUrls.length ? photoUrls[0] : null,
+          customer_present:  custPresent,
+          signature_url:     signatureUrl,
+          is_remedial:       false,
+          door_number:       dflow.door || null,
+          source:            'driver',
+        }),
+      });
+    }
+
+    // 5. Write delivery_submissions row
+    statusEl.textContent = 'Saving sign-off…';
+    await sbFetch(TALLI_URL, TALLI_KEY, 'delivery_submissions', {
+      method: 'POST',
+      prefer: 'return=minimal',
+      body: JSON.stringify({
+        job_ref:           dflow.jobRef || null,
+        driver_name:       driverName,
+        delivery_team:     team || null,
+        customer_postcode: formattedPC || null,
+        delivery_status:   deliveryStatus,
+        customer_present:  custPresent,
+        notes:             notes || null,
+        photo_urls:        photoUrls.length ? photoUrls : null,
+        signature_url:     signatureUrl,
+        submitted_at:      new Date().toISOString(),
+      }),
+    });
+
+    // 6. Success screen
+    const body = document.getElementById('dflow-body');
+    body.innerHTML = `
+      <div class="dflow-success">
+        <div class="success-icon">✅</div>
+        <h3>Delivery confirmed</h3>
+        <p>Sign-off saved for ${esc(formattedPC || dflow.jobRef || 'this stop')}.</p>
+        <button class="dflow-done-btn" data-action="dflow-done">Back to route</button>
+      </div>`;
+
+  } catch(err) {
+    submitBtn.disabled = false;
+    statusEl.textContent = 'Error: ' + err.message;
+    console.error('Delivery submit error:', err);
+  }
+}
+
+// ── Close delivery overlay ───────────────────────────────────────────────
+function closeDeliveryFlow() {
+  document.getElementById('delivery-overlay').classList.remove('active');
+  dflow.photos     = [];
+  dflow.sigDataUrl = null;
+}
+
+// ── Delegated click handler additions for delivery flow ─────────────────
+document.addEventListener('click', function(e) {
+  // Open delivery flow from stop card
+  const openBtn = e.target.closest('[data-action="open-delivery"]');
+  if (openBtn) {
+    openDeliveryFlow(openBtn.dataset.postcode, openBtn.dataset.jobref, openBtn.dataset.door);
+    return;
+  }
+
+  // Back button on delivery overlay
+  if (e.target.closest('#dflow-back-btn')) {
+    closeDeliveryFlow();
+    return;
+  }
+
+  // Done button on success screen
+  if (e.target.closest('[data-action="dflow-done"]')) {
+    closeDeliveryFlow();
+    return;
+  }
+
+  // Item status buttons
+  const statusBtn = e.target.closest('[data-action="item-status"]');
+  if (statusBtn) {
+    const idx    = statusBtn.dataset.idx;
+    const status = statusBtn.dataset.status;
+    const row    = document.getElementById('item-row-' + idx);
+    // Clear all active classes on this row
+    row.querySelectorAll('.item-status-btn').forEach(b => {
+      b.classList.remove('active-delivered', 'active-short', 'active-not');
+    });
+    statusBtn.classList.add(
+      status === 'delivered' ? 'active-delivered' :
+      status === 'short'     ? 'active-short'     : 'active-not'
+    );
+    const shortQty = document.getElementById('short-qty-' + idx);
+    if (shortQty) shortQty.style.display = status === 'short' ? 'block' : 'none';
+    return;
+  }
+
+  // Continue to sign-off
+  if (e.target.closest('[data-action="dflow-next"]')) {
+    renderDflowStep2();
+    document.getElementById('delivery-overlay').scrollTop = 0;
+    return;
+  }
+
+  // Delivery status radio
+  const statusRadio = e.target.closest('[data-action="dflow-status"]');
+  if (statusRadio) {
+    document.querySelectorAll('[data-action="dflow-status"]').forEach(b => b.classList.remove('selected'));
+    statusRadio.classList.add('selected');
+    return;
+  }
+
+  // Customer present radio
+  const presentRadio = e.target.closest('[data-action="dflow-present"]');
+  if (presentRadio) {
+    document.querySelectorAll('[data-action="dflow-present"]').forEach(b => b.classList.remove('selected'));
+    presentRadio.classList.add('selected');
+    return;
+  }
+
+  // Add photo
+  if (e.target.closest('[data-action="add-photo"]')) {
+    document.getElementById('photo-file-input').click();
+    return;
+  }
+
+  // Clear signature
+  if (e.target.closest('[data-action="sig-clear"]')) {
+    const canvas = document.getElementById('sig-canvas');
+    if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
+
+  // Submit
+  if (e.target.closest('[data-action="dflow-submit"]')) {
+    submitDelivery();
+    return;
+  }
+});
+
+// Photo file input change
+document.addEventListener('change', function(e) {
+  if (e.target.id !== 'photo-file-input') return;
+  const files = Array.from(e.target.files || []);
+  if (!files.length) return;
+  dflow.photos.push(...files);
+  const previews = document.getElementById('photo-previews');
+  if (!previews) return;
+  files.forEach(file => {
+    const url   = URL.createObjectURL(file);
+    const img   = document.createElement('img');
+    img.className = 'photo-thumb';
+    img.src     = url;
+    previews.insertBefore(img, previews.querySelector('[data-action="add-photo"]'));
+  });
+  e.target.value = ''; // reset so same file can be re-added if needed
+});
 </script>
 </body>
 </html>
