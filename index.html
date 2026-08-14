@@ -1,4 +1,4 @@
-<!-- Haul v3.9.0 -->
+<!-- Haul v3.9.1 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -513,7 +513,7 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.9.0</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.9.1</span></div>
     <div style="display:flex;align-items:center;gap:10px;">
       <button id="btn-back-helm" onclick="window.parent.postMessage({type:'HAUL_NAV',action:'go-home'},'https://i3rink.github.io')" style="display:none;background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);font-size:13px;font-weight:600;padding:7px 12px;cursor:pointer;">← Helm</button>
       <button id="btn-install">Install App</button>
@@ -689,7 +689,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.9.0';
+const APP_VERSION = 'v3.9.1';
 document.getElementById('app-version').textContent = APP_VERSION;
 
 function esc(str) {
@@ -2402,23 +2402,29 @@ async function openDeliveryFlow(postcode, jobRef, door) {
   body.innerHTML = '<div style="color:var(--muted);font-size:.9rem;padding:40px 0;text-align:center;">Loading items…</div>';
 
   // Fetch session items from Talli
+  // sessions.jobs is a jsonb array of Q-refs e.g. ["Q1862","Q1873"]
+  // master_list is a jsonb array of item objects, each with jobQtys keyed by Q-ref
   try {
     if (jobRef) {
+      const encoded = encodeURIComponent(JSON.stringify([jobRef]));
       const rows = await sbFetch(TALLI_URL, TALLI_KEY,
-        `sessions?job_ref=eq.${encodeURIComponent(jobRef)}&select=id,master_list&order=created_at.desc&limit=1`
+        `sessions?jobs=cs.${encoded}&select=id,master_list&order=created_at.desc&limit=1`
       );
       if (rows && rows.length > 0) {
         dflow.sessionId = rows[0].id;
         const ml = rows[0].master_list;
-        const masterList = typeof ml === 'string' ? JSON.parse(ml) : (ml || {});
-        // master_list is an object keyed by item key
-        dflow.items = Object.entries(masterList).map(([key, item]) => ({
-          key:          key,
-          name:         item.name || item.description || key,
-          pickedQty:    item.quantity || item.qty || 1,
-          status:       'delivered',
-          deliveredQty: item.quantity || item.qty || 1,
-        }));
+        const masterList = Array.isArray(ml) ? ml :
+          (typeof ml === 'string' ? JSON.parse(ml) : []);
+        // Filter to items relevant to this job ref; use per-job qty from jobQtys
+        dflow.items = masterList
+          .filter(item => item.jobQtys && item.jobQtys[jobRef] !== undefined)
+          .map(item => ({
+            key:          item.key  || '',
+            name:         item.name || item.key || 'Unknown item',
+            pickedQty:    item.jobQtys[jobRef],
+            status:       'delivered',
+            deliveredQty: item.jobQtys[jobRef],
+          }));
       }
     }
   } catch(err) {
