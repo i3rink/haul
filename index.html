@@ -1,4 +1,4 @@
-<!-- Haul v3.9.2 -->
+<!-- Haul v3.9.3 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -513,7 +513,7 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.9.2</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.9.3</span></div>
     <div style="display:flex;align-items:center;gap:10px;">
       <button id="btn-back-helm" onclick="window.parent.postMessage({type:'HAUL_NAV',action:'go-home'},'https://i3rink.github.io')" style="display:none;background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);font-size:13px;font-weight:600;padding:7px 12px;cursor:pointer;">← Helm</button>
       <button id="btn-install">Install App</button>
@@ -689,7 +689,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.9.2';
+const APP_VERSION = 'v3.9.3';
 document.getElementById('app-version').textContent = APP_VERSION;
 
 function esc(str) {
@@ -2538,7 +2538,12 @@ function renderDflowStep2() {
     </div>
 
     <div style="margin-bottom:14px;">
-      <label class="dflow-label">Customer signature</label>
+      <label class="dflow-label">Recipient name <span style="color:var(--red);font-size:11px;margin-left:4px;">Required</span></label>
+      <input class="dflow-input" id="dflow-recipient" type="text" placeholder="Full name of person accepting delivery" autocomplete="off">
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <label class="dflow-label">Customer signature <span style="color:var(--red);font-size:11px;margin-left:4px;">Required</span></label>
       <canvas id="sig-canvas"></canvas>
       <div class="sig-actions">
         <button class="sig-clear" data-action="sig-clear">Clear signature</button>
@@ -2606,11 +2611,27 @@ async function submitDelivery() {
 
   try {
     // 1. Read form values
-    const postcode       = (document.getElementById('dflow-postcode').value || '').trim().toUpperCase();
-    const team           = (document.getElementById('dflow-team').value     || '').trim();
+    const postcode       = (document.getElementById('dflow-postcode').value   || '').trim().toUpperCase();
+    const team           = (document.getElementById('dflow-team').value       || '').trim();
+    const recipientName  = (document.getElementById('dflow-recipient').value  || '').trim();
     const deliveryStatus = document.querySelector('[data-action="dflow-status"].selected')?.dataset.val  || 'full';
     const custPresent    = document.querySelector('[data-action="dflow-present"].selected')?.dataset.val || 'yes';
     const notes          = (document.getElementById('dflow-notes').value || '').trim();
+
+    // Validate required sign-off fields
+    if (!recipientName) {
+      submitBtn.disabled = false;
+      statusEl.textContent = 'Recipient name is required before submitting.';
+      document.getElementById('dflow-recipient').focus();
+      return;
+    }
+    const sigCanvas = document.getElementById('sig-canvas');
+    const sigBlank  = !sigCanvas || (await new Promise(res => sigCanvas.toBlob(b => res(!b || b.size <= 1000), 'image/png')));
+    if (sigBlank) {
+      submitBtn.disabled = false;
+      statusEl.textContent = 'A drawn signature is required before submitting.';
+      return;
+    }
 
     // 2. Upload photos
     let photoUrls = [];
@@ -2622,13 +2643,12 @@ async function submitDelivery() {
       }
     }
 
-    // 3. Upload signature
+    // 3. Upload signature (already validated as drawn above)
     let signatureUrl = null;
-    const canvas = document.getElementById('sig-canvas');
-    if (canvas) {
+    if (sigCanvas) {
       statusEl.textContent = 'Uploading signature…';
-      const sigBlob = await new Promise(res => canvas.toBlob(res, 'image/png'));
-      if (sigBlob && sigBlob.size > 1000) { // only if actually drawn on
+      const sigBlob = await new Promise(res => sigCanvas.toBlob(res, 'image/png'));
+      if (sigBlob) {
         signatureUrl = await uploadBlobToStorageTalli('showroom-images', 'deliveries', sigBlob, 'png');
       }
     }
@@ -2733,6 +2753,7 @@ async function submitDelivery() {
         notes:             notes || null,
         photo_urls:        photoUrls.length ? photoUrls : null,
         signature_url:     signatureUrl,
+        recipient_name:    recipientName || null,
         submitted_at:      new Date().toISOString(),
       }),
     });
