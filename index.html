@@ -1,4 +1,4 @@
-<!-- Haul v3.9.3 -->
+<!-- Haul v3.9.4 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -513,7 +513,7 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.9.3</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.9.4</span></div>
     <div style="display:flex;align-items:center;gap:10px;">
       <button id="btn-back-helm" onclick="window.parent.postMessage({type:'HAUL_NAV',action:'go-home'},'https://i3rink.github.io')" style="display:none;background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);font-size:13px;font-weight:600;padding:7px 12px;cursor:pointer;">← Helm</button>
       <button id="btn-install">Install App</button>
@@ -686,16 +686,28 @@
   <button id="egg-close">✕</button>
 </div>
 
+<div id="toast" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;color:#fff;box-shadow:0 4px 16px rgba(0,0,0,.4);max-width:90vw;text-align:center;pointer-events:none;"></div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.9.3';
+const APP_VERSION = 'v3.9.4';
 document.getElementById('app-version').textContent = APP_VERSION;
 
 function esc(str) {
   return String(str)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+let _toastTimer = null;
+function toast(msg, type) {
+  var el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.background = type === 'error' ? '#ef4444' : '#10b981';
+  el.style.display = 'block';
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(function() { el.style.display = 'none'; }, 3500);
 }
 // ── SUPABASE CONFIG ──
 const HELM_URL = 'https://xjnrmltfruzwmnhxplzn.supabase.co';
@@ -904,21 +916,33 @@ async function loadDriverShift(driverName) {
       const ref   = stop.jobRef ? `Job #${stop.jobRef}` : '';
       const dist  = stop.leg ? fmtDist(stop.leg.distKm) : '';
       const arr   = (stop.leg && departTime) ? addMinsToTime(departTime,
-        stops.slice(0, i).reduce((a,s)=>a+(s.leg?s.leg.durMins:0),0) + i * STOP_DWELL
+        stops.slice(0, i + 1).reduce((a,s)=>a+(s.leg?s.leg.durMins:0),0) + i * STOP_DWELL
       ) : null;
       const mapsHref = `https://www.google.com/maps/search/${encodeURIComponent((door ? door + ', ' : '') + pc + ', UK')}`;
+
+      // Delivery type badge
+      const sourceMap = { install: 'Delivery', remedial: 'Remedial', goods_out: 'Goods Out' };
+      const sourceLabel = sourceMap[stop.source] || (stop.source ? stop.source : 'Delivery');
+      const sourceColour = stop.source === 'remedial' ? 'rgba(245,158,11,.15);color:#f59e0b;border-color:rgba(245,158,11,.3)' :
+                           stop.source === 'goods_out' ? 'rgba(100,180,255,.12);color:#88aaee;border-color:rgba(100,180,255,.25)' :
+                           'rgba(16,185,129,.12);color:#10b981;border-color:rgba(16,185,129,.25)';
+
       const card = document.createElement('div');
       card.className = 'shift-card';
       card.innerHTML = `
         <div class="shift-card-num">Stop ${i + 1} of ${stops.length}</div>
         <div class="shift-card-postcode">${esc(pc)}</div>
         ${door ? `<div class="shift-card-door">🏠 ${esc(door)}</div>` : ''}
-        ${ref   ? `<div class="shift-card-jobref">${esc(ref)}</div>` : ''}
+        ${ref  ? `<div class="shift-card-jobref">${esc(ref)}</div>` : ''}
+        <div style="margin-bottom:8px;">
+          <span style="display:inline-block;background:${sourceColour};border:1px solid;border-radius:4px;padding:3px 9px;font-size:11px;font-weight:700;letter-spacing:.4px;">${esc(sourceLabel)}</span>
+        </div>
+        ${stop.notes ? `<div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:6px;padding:8px 10px;font-size:12px;color:#f59e0b;font-weight:600;margin-bottom:10px;">📋 ${esc(stop.notes)}</div>` : ''}
         <div class="shift-card-meta">
           ${dist ? `<span class="driver-tag dist">${esc(dist)}</span>` : ''}
           ${arr  ? `<span class="driver-tag clock">~${esc(arr)}</span>` : ''}
         </div>
-        <div class="shift-card-actions">
+        <div class="shift-card-actions" style="margin-top:12px;">
           <a class="shift-btn-maps" href="${mapsHref}" target="_blank" rel="noopener">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
             Navigate
@@ -985,7 +1009,7 @@ history.replaceState({ tab: 'planner' }, '', location.href);
 const stopsContainer = document.getElementById('stops-container');
 let stopCount = 0;
 
-function addStop(postcode='', jobRef='', doorNumber='') {
+function addStop(postcode='', jobRef='', doorNumber='', notes='') {
   if (stopCount >= 20) return;
   stopCount++;
   const row = document.createElement('div');
@@ -994,6 +1018,7 @@ function addStop(postcode='', jobRef='', doorNumber='') {
     <input type="text" class="stop-postcode" placeholder="Postcode" value="${postcode}" autocomplete="off" spellcheck="false" style="flex:2;min-width:0;">
     <input type="text" class="stop-door" placeholder="Door no." value="${doorNumber}" autocomplete="off" spellcheck="false" style="flex:1;min-width:0;font-size:13px;">
     <button class="btn-remove" title="Remove" tabindex="-1">×</button>
+    <input type="text" class="stop-notes" placeholder="Driver note (e.g. collect 1500 bath)" value="${notes}" autocomplete="off" spellcheck="false" style="flex:3;min-width:0;font-size:12px;margin-top:4px;width:100%;">
   `;
   // If a jobRef was passed in (e.g. loading a saved route), show it immediately
   if (jobRef) {
@@ -1247,7 +1272,8 @@ async function optimise() {
     postcode:   normPC(r.querySelector('.stop-postcode').value),
     jobRef:     r.dataset.jobRef   || '',
     source:     r.dataset.source   || '',
-    doorNumber: (r.querySelector('.stop-door') ? r.querySelector('.stop-door').value.trim() : '')
+    doorNumber: (r.querySelector('.stop-door')   ? r.querySelector('.stop-door').value.trim()   : ''),
+    notes:      (r.querySelector('.stop-notes')  ? r.querySelector('.stop-notes').value.trim()  : ''),
   })).filter(s => s.postcode);
 
   if (stops.length < 2) { setStatus('Add at least 2 stops.', true); btn.disabled=false; return; }
@@ -1792,49 +1818,32 @@ function buildPayload(vanIdx) {
 }
 
 async function showShareModalFromPayload(payload, label) {
+  // Show saving state while route is written to Supabase
   showModal(
     `Share – ${label}`,
-    `<p style="color:var(--muted);font-size:13px;margin-bottom:16px;">Saving route and generating link…</p>
-    <div id="share-link-box" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-size:13px;word-break:break-all;color:var(--muted);margin-bottom:12px;min-height:42px;display:flex;align-items:center;">
-      <span id="share-link-text" style="flex:1;">Saving to database…</span>
-    </div>
-    <button id="btn-copy-link" class="btn-primary" style="margin-top:0;" disabled>Copy link</button>`,
-    [{ label:'Close', fn:closeModal, style:'background:var(--surface);border:1px solid var(--border);color:var(--text);margin-top:8px;' }]
+    `<p style="color:var(--muted);font-size:13px;">Saving route…</p>`,
+    []
   );
 
-  const linkTextEl = document.getElementById('share-link-text');
-  const copyBtn = document.getElementById('btn-copy-link');
-
-  // Save to Supabase and get a route ID for a clean short link
+  const driverName = payload.driverName || 'driver';
   const routeId = await saveRouteToSupabase(payload, label);
 
-  let finalLink;
-  if (routeId) {
-    // Supabase-backed link — reliable, works every time
-    const base = window.location.href.split('?')[0].split('#')[0];
-    finalLink = `${base}?route=${routeId}`;
-  } else {
-    // Fallback: encode route in URL (old behaviour)
-    const encoded = encodeRoute(payload);
-    const base = window.location.href.split('?')[0].split('#')[0];
-    finalLink = encoded ? `${base}?r=${encoded}` : null;
-  }
-
-  if (!finalLink) {
-    if (linkTextEl) linkTextEl.textContent = 'Could not generate link — try again.';
+  if (!routeId) {
+    showModal(
+      `Share – ${label}`,
+      `<p style="color:var(--danger);font-size:13px;">Could not save route — check connection and try again.</p>`,
+      [{ label:'Close', fn:closeModal, style:'background:var(--surface);border:1px solid var(--border);color:var(--text);' }]
+    );
     return;
   }
 
-  if (linkTextEl) linkTextEl.textContent = finalLink;
-  if (copyBtn) {
-    copyBtn.disabled = false;
-    copyBtn.addEventListener('click', () => {
-      navigator.clipboard.writeText(finalLink).then(() => {
-        copyBtn.textContent = 'Copied!';
-        setTimeout(() => { copyBtn.textContent = 'Copy link'; }, 2000);
-      });
-    });
-  }
+  showModal(
+    '✅ Route sent',
+    `<p style="font-size:15px;font-weight:600;margin-bottom:6px;">Route sent to ${esc(driverName)}.</p>
+     <p style="font-size:13px;color:var(--muted);">They'll see it next time they open Haul.</p>`,
+    [{ label:'Close', fn:closeModal, style:'background:var(--accent);color:#0f0f1a;font-weight:700;' }]
+  );
+  toast(`Route sent to ${driverName}`, 'success');
 }
 
 function encodeRoute(payload) {
@@ -2077,24 +2086,70 @@ function saveLog(log) { try{localStorage.setItem(LOG_KEY,JSON.stringify(log));}c
 function getSavedRoutes() { try{return JSON.parse(localStorage.getItem(ROUTES_KEY)||'[]');}catch{return[];} }
 function setSavedRoutes(r) { try{localStorage.setItem(ROUTES_KEY,JSON.stringify(r));}catch{} }
 
-// ── RENDER SAVED ROUTES ──
-function renderSavedRoutes() {
-  const container=document.getElementById('saved-routes-list');
-  const routes=getSavedRoutes();
-  if (!routes.length) { container.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div><p>No saved routes yet.<br>Optimise a route and hit "Save as route".</p></div>'; return; }
-  container.innerHTML='';
-  routes.forEach(route => {
-    const card=document.createElement('div'); card.className='saved-route-card';
-    card.innerHTML=`<div class="saved-route-info"><div class="saved-route-name">${route.name}</div><div class="saved-route-meta">${route.stops.length} stop${route.stops.length!==1?'s':''} · Saved ${new Date(route.savedAt).toLocaleDateString('en-GB')}</div></div><div class="saved-route-actions"><button class="btn-small primary" data-id="${route.id}">Load</button><button class="btn-small danger" data-del="${route.id}">Delete</button></div>`;
-    card.querySelector('[data-id]').addEventListener('click',()=>loadSavedRoute(route));
-    card.querySelector('[data-del]').addEventListener('click',()=>{setSavedRoutes(getSavedRoutes().filter(r=>r.id!==route.id));renderSavedRoutes();});
-    container.appendChild(card);
-  });
+// ── RENDER SAVED ROUTES — reads from Helm routes table ──
+async function renderSavedRoutes() {
+  const container = document.getElementById('saved-routes-list');
+  container.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:20px 0;">Loading…</div>';
+  try {
+    const rows = await sbFetch(HELM_URL, HELM_KEY,
+      'routes?select=id,driver_name,van_label,departure_time,total_distance_miles,status,created_at,stops&order=created_at.desc&limit=50'
+    );
+    if (!rows || !rows.length) {
+      container.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>No routes sent yet.</p></div>';
+      return;
+    }
+    container.innerHTML = '';
+    rows.forEach(route => {
+      const payload = route.stops ? (typeof route.stops === 'string' ? JSON.parse(route.stops) : route.stops) : null;
+      const stopCount = payload && payload.runs && payload.runs[0] ? (payload.runs[0].stops || []).length : '?';
+      const date = new Date(route.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+      const statusLabel = route.status === 'recalled' ? 'Recalled' : route.status === 'active' ? 'Active' : route.status || 'Active';
+      const statusColour = route.status === 'recalled'
+        ? 'background:rgba(239,68,68,.12);color:#ef4444;border-color:rgba(239,68,68,.25)'
+        : 'background:rgba(16,185,129,.12);color:#10b981;border-color:rgba(16,185,129,.25)';
+
+      const card = document.createElement('div');
+      card.className = 'saved-route-card';
+      card.innerHTML = `
+        <div class="saved-route-info">
+          <div class="saved-route-name">${esc(route.driver_name || 'Unknown driver')}${route.van_label ? ` · ${esc(route.van_label)}` : ''}</div>
+          <div class="saved-route-meta">${stopCount} stop${stopCount !== 1 ? 's' : ''} · Depart ${esc(route.departure_time || '—')} · ${date}</div>
+          <div style="margin-top:6px;"><span style="display:inline-block;border:1px solid;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;${statusColour}">${esc(statusLabel)}</span></div>
+        </div>
+        <div class="saved-route-actions">
+          ${route.status !== 'recalled' ? `<button class="btn-small danger" data-recall="${esc(route.id)}">Recall</button>` : ''}
+        </div>
+      `;
+      const recallBtn = card.querySelector('[data-recall]');
+      if (recallBtn) {
+        recallBtn.addEventListener('click', async () => {
+          recallBtn.disabled = true;
+          recallBtn.textContent = '…';
+          try {
+            await sbFetch(HELM_URL, HELM_KEY, `routes?id=eq.${route.id}`, {
+              method: 'PATCH',
+              body: JSON.stringify({ status: 'recalled', updated_at: new Date().toISOString() }),
+              prefer: 'return=minimal',
+            });
+            toast('Route recalled — driver will no longer see it', 'success');
+            renderSavedRoutes();
+          } catch(err) {
+            recallBtn.disabled = false;
+            recallBtn.textContent = 'Recall';
+            toast('Recall failed: ' + err.message, 'error');
+          }
+        });
+      }
+      container.appendChild(card);
+    });
+  } catch(err) {
+    container.innerHTML = `<div style="color:var(--danger);font-size:13px;padding:20px 0;">Could not load routes: ${esc(err.message)}</div>`;
+  }
 }
 
 function loadSavedRoute(route) {
   stopsContainer.innerHTML=''; stopCount=0;
-  route.stops.forEach(s=>addStop(s.postcode, s.jobRef||'', s.doorNumber||''));
+  route.stops.forEach(s=>addStop(s.postcode, s.jobRef||'', s.doorNumber||'', s.notes||''));
   showPage('planner');
   window.scrollTo({top:0,behavior:'smooth'});
 }
