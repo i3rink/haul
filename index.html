@@ -1,4 +1,4 @@
-<!-- Haul v3.9.4 -->
+<!-- Haul v3.9.6 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -513,7 +513,7 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.9.4</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.9.6</span></div>
     <div style="display:flex;align-items:center;gap:10px;">
       <button id="btn-back-helm" onclick="window.parent.postMessage({type:'HAUL_NAV',action:'go-home'},'https://i3rink.github.io')" style="display:none;background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);font-size:13px;font-weight:600;padding:7px 12px;cursor:pointer;">← Helm</button>
       <button id="btn-install">Install App</button>
@@ -691,7 +691,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.9.4';
+const APP_VERSION = 'v3.9.6';
 document.getElementById('app-version').textContent = APP_VERSION;
 
 function esc(str) {
@@ -918,7 +918,7 @@ async function loadDriverShift(driverName) {
       const arr   = (stop.leg && departTime) ? addMinsToTime(departTime,
         stops.slice(0, i + 1).reduce((a,s)=>a+(s.leg?s.leg.durMins:0),0) + i * STOP_DWELL
       ) : null;
-      const mapsHref = `https://www.google.com/maps/search/${encodeURIComponent((door ? door + ', ' : '') + pc + ', UK')}`;
+      const mapsHref = `https://www.google.com/maps/search/${encodeURIComponent(pc + ', UK')}`;
 
       // Delivery type badge
       const sourceMap = { install: 'Delivery', remedial: 'Remedial', goods_out: 'Goods Out' };
@@ -1009,7 +1009,7 @@ history.replaceState({ tab: 'planner' }, '', location.href);
 const stopsContainer = document.getElementById('stops-container');
 let stopCount = 0;
 
-function addStop(postcode='', jobRef='', doorNumber='', notes='') {
+function addStop(postcode='', jobRef='', doorNumber='', notes='', source='') {
   if (stopCount >= 20) return;
   stopCount++;
   const row = document.createElement('div');
@@ -1018,7 +1018,14 @@ function addStop(postcode='', jobRef='', doorNumber='', notes='') {
     <input type="text" class="stop-postcode" placeholder="Postcode" value="${postcode}" autocomplete="off" spellcheck="false" style="flex:2;min-width:0;">
     <input type="text" class="stop-door" placeholder="Door no." value="${doorNumber}" autocomplete="off" spellcheck="false" style="flex:1;min-width:0;font-size:13px;">
     <button class="btn-remove" title="Remove" tabindex="-1">×</button>
-    <input type="text" class="stop-notes" placeholder="Driver note (e.g. collect 1500 bath)" value="${notes}" autocomplete="off" spellcheck="false" style="flex:3;min-width:0;font-size:12px;margin-top:4px;width:100%;">
+    <div style="display:flex;gap:6px;width:100%;margin-top:4px;">
+      <select class="stop-source" style="flex:1;min-width:0;font-size:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:6px 8px;">
+        <option value="install"${source === 'install' || source === '' ? ' selected' : ''}>Delivery</option>
+        <option value="remedial"${source === 'remedial' ? ' selected' : ''}>Remedial</option>
+        <option value="goods_out"${source === 'goods_out' ? ' selected' : ''}>Goods Out</option>
+      </select>
+      <input type="text" class="stop-notes" placeholder="Driver note (e.g. collect 1500 bath)" value="${notes}" autocomplete="off" spellcheck="false" style="flex:3;min-width:0;font-size:12px;">
+    </div>
   `;
   // If a jobRef was passed in (e.g. loading a saved route), show it immediately
   if (jobRef) {
@@ -1058,7 +1065,11 @@ function addStop(postcode='', jobRef='', doorNumber='', notes='') {
         row.insertBefore(tag, row.querySelector('.btn-remove'));
         row.dataset.jobRef = data.jobRef;
       }
-      if (data.source) row.dataset.source = data.source;
+      if (data.source) {
+        row.dataset.source = data.source;
+        const sourceSelect = row.querySelector('.stop-source');
+        if (sourceSelect) sourceSelect.value = data.source;
+      }
       // Auto-fill door number if Talli has it and field is empty
       const doorInput = row.querySelector('.stop-door');
       if (doorInput && !doorInput.value && data.doorNumber) {
@@ -1271,7 +1282,7 @@ async function optimise() {
   const stops = rows.map(r => ({
     postcode:   normPC(r.querySelector('.stop-postcode').value),
     jobRef:     r.dataset.jobRef   || '',
-    source:     r.dataset.source   || '',
+    source:     (r.querySelector('.stop-source') ? r.querySelector('.stop-source').value : r.dataset.source || 'install'),
     doorNumber: (r.querySelector('.stop-door')   ? r.querySelector('.stop-door').value.trim()   : ''),
     notes:      (r.querySelector('.stop-notes')  ? r.querySelector('.stop-notes').value.trim()  : ''),
   })).filter(s => s.postcode);
@@ -2149,7 +2160,7 @@ async function renderSavedRoutes() {
 
 function loadSavedRoute(route) {
   stopsContainer.innerHTML=''; stopCount=0;
-  route.stops.forEach(s=>addStop(s.postcode, s.jobRef||'', s.doorNumber||'', s.notes||''));
+  route.stops.forEach(s=>addStop(s.postcode, s.jobRef||'', s.doorNumber||'', s.notes||'', s.source||'install'));
   showPage('planner');
   window.scrollTo({top:0,behavior:'smooth'});
 }
