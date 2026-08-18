@@ -1,4 +1,4 @@
-<!-- Haul v3.9.8 -->
+<!-- Haul v3.9.9 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -513,7 +513,7 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.9.8</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.9.9</span></div>
     <div style="display:flex;align-items:center;gap:10px;">
       <button id="btn-back-helm" onclick="window.parent.postMessage({type:'HAUL_NAV',action:'go-home'},'https://i3rink.github.io')" style="display:none;background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);font-size:13px;font-weight:600;padding:7px 12px;cursor:pointer;">← Helm</button>
       <button id="btn-install">Install App</button>
@@ -691,7 +691,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.9.8';
+const APP_VERSION = 'v3.9.9';
 document.getElementById('app-version').textContent = APP_VERSION;
 
 function esc(str) {
@@ -1484,7 +1484,7 @@ function renderVanResult(run, startPc, departTime, returnToWh) {
         <span class="leg-tag time-tag">${fmtMins(driveMin)} drive</span>
         ${arriveStr ? `<span class="leg-tag clock-tag">Arrive ${esc(arriveStr)}</span>` : ''}
       </div>
-      ${stop.source === 'remedial' ? `<div class="stop-return" id="return-${i}">⟳ Loading return item…</div>` : ''}
+      ${stop.notes ? `<div class="stop-return">📋 ${esc(stop.notes)}</div>` : ''}
     `;
 
     const wrapper = document.createElement('div');
@@ -1495,25 +1495,12 @@ function renderVanResult(run, startPc, departTime, returnToWh) {
     li.appendChild(dragHandle);
     li.appendChild(wrapper);
 
-    li.addEventListener('click', async e => {
+    li.addEventListener('click', e => {
       if (e.target.closest('.drag-handle')) return;
       const isOpen = detail.classList.contains('open');
       detail.classList.toggle('open');
       const arrow = header.querySelector('[data-arrow]');
       if (arrow) arrow.textContent = isOpen ? '▾' : '▴';
-      if (!isOpen && stop.source === 'remedial' && stop.jobRef) {
-        const returnEl = detail.querySelector(`#return-${i}`);
-        if (returnEl && returnEl.textContent.includes('Loading')) {
-          try {
-            const rows = await sbFetch(TALLI_URL, TALLI_KEY,
-              `remedials?job_ref=eq.${encodeURIComponent(stop.jobRef)}&select=return_item&limit=1`
-            );
-            returnEl.textContent = (rows && rows.length && rows[0].return_item)
-              ? `⟳ Collect: ${rows[0].return_item}`
-              : '⟳ No return item recorded';
-          } catch { returnEl.textContent = '⟳ Could not load return item'; }
-        }
-      }
     });
 
     list.appendChild(li);
