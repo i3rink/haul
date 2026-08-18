@@ -1009,11 +1009,27 @@ history.replaceState({ tab: 'planner' }, '', location.href);
 const stopsContainer = document.getElementById('stops-container');
 let stopCount = 0;
 
+function reNumberStops() {
+  Array.from(stopsContainer.querySelectorAll('.stop-counter')).forEach((el, i) => {
+    el.textContent = `Stop ${i + 1}`;
+  });
+}
+
 function addStop(postcode='', jobRef='', doorNumber='', notes='', source='') {
   if (stopCount >= 20) return;
   stopCount++;
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'margin-bottom:14px;';
+
+  const counter = document.createElement('div');
+  counter.className = 'stop-counter';
+  counter.style.cssText = 'font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.6px;text-transform:uppercase;margin-bottom:5px;';
+  counter.textContent = `Stop ${stopCount}`;
+  wrapper.appendChild(counter);
+
   const row = document.createElement('div');
   row.className = 'field-row';
+  row.style.cssText = 'margin-bottom:0;';
   row.innerHTML = `
     <input type="text" class="stop-postcode" placeholder="Postcode" value="${postcode}" autocomplete="off" spellcheck="false" style="flex:2;min-width:120px;">
     <input type="text" class="stop-door" placeholder="Door no." value="${doorNumber}" autocomplete="off" spellcheck="false" style="flex:1;min-width:70px;font-size:13px;">
@@ -1027,6 +1043,7 @@ function addStop(postcode='', jobRef='', doorNumber='', notes='', source='') {
       <input type="text" class="stop-notes" placeholder="Driver note (e.g. collect 1500 bath)" value="${notes}" autocomplete="off" spellcheck="false" style="flex:1;min-width:0;font-size:12px;">
     </div>
   `;
+  wrapper.appendChild(row);
   // If a jobRef was passed in (e.g. loading a saved route), show it immediately
   if (jobRef) {
     const tag = document.createElement('span');
@@ -1036,7 +1053,11 @@ function addStop(postcode='', jobRef='', doorNumber='', notes='', source='') {
     row.insertBefore(tag, row.querySelector('.btn-remove'));
   }
 
-  row.querySelector('.btn-remove').addEventListener('click', () => { row.remove(); stopCount = Math.max(0, stopCount-1); });
+  row.querySelector('.btn-remove').addEventListener('click', () => {
+    wrapper.remove();
+    stopCount = Math.max(0, stopCount - 1);
+    reNumberStops();
+  });
 
   const pcInput = row.querySelector('.stop-postcode');
 
@@ -1078,7 +1099,7 @@ function addStop(postcode='', jobRef='', doorNumber='', notes='', source='') {
     }
   });
 
-  stopsContainer.appendChild(row);
+  stopsContainer.appendChild(wrapper);
 }
 addStop(); addStop(); addStop();
 document.getElementById('btn-add-stop').addEventListener('click', () => addStop());
