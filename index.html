@@ -1,4 +1,4 @@
-<!-- Haul v3.9.7 -->
+<!-- Haul v3.9.8 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -513,7 +513,7 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.9.7</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.9.8</span></div>
     <div style="display:flex;align-items:center;gap:10px;">
       <button id="btn-back-helm" onclick="window.parent.postMessage({type:'HAUL_NAV',action:'go-home'},'https://i3rink.github.io')" style="display:none;background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);font-size:13px;font-weight:600;padding:7px 12px;cursor:pointer;">← Helm</button>
       <button id="btn-install">Install App</button>
@@ -691,7 +691,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.9.7';
+const APP_VERSION = 'v3.9.8';
 document.getElementById('app-version').textContent = APP_VERSION;
 
 function esc(str) {
@@ -1433,7 +1433,7 @@ function renderResults({ runs, startPc, departTime, returnToWh, usingFallback, v
 
 function typeBadge(source) {
   if (!source) return '';
-  const labels = { install: 'Install', remedial: 'Remedial', goods_out: 'Goods Out' };
+  const labels = { install: 'Delivery', remedial: 'Remedial', goods_out: 'Goods Out' };
   const cls = source.toLowerCase();
   return `<span class="type-badge ${cls}">${labels[source] || source}</span>`;
 }
@@ -1464,10 +1464,12 @@ function renderVanResult(run, startPc, departTime, returnToWh) {
     header.innerHTML = `
       <div class="stop-num">${i+1}</div>
       <div class="stop-info" style="flex:1;min-width:0;">
-        <div class="stop-name" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <div class="stop-name" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
           <span style="font-size:16px;font-weight:800;letter-spacing:1px;">${esc(stop.postcode)}</span>
-          ${stop.doorNumber ? `<span style="font-size:13px;color:var(--muted);">🏠 ${esc(stop.doorNumber)}</span>` : ''}
-          ${typeBadge(stop.source)}
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+            ${stop.doorNumber ? `<span style="font-size:12px;color:var(--muted);">🏠 ${esc(stop.doorNumber)}</span>` : ''}
+            ${typeBadge(stop.source)}
+          </div>
         </div>
       </div>
       <span data-arrow style="font-size:11px;color:var(--muted);flex-shrink:0;">▾</span>
