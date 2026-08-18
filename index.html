@@ -1,4 +1,4 @@
-<!-- Haul v3.9.9 -->
+<!-- Haul v3.10.0 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -513,7 +513,7 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.9.9</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.10.0</span></div>
     <div style="display:flex;align-items:center;gap:10px;">
       <button id="btn-back-helm" onclick="window.parent.postMessage({type:'HAUL_NAV',action:'go-home'},'https://i3rink.github.io')" style="display:none;background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);font-size:13px;font-weight:600;padding:7px 12px;cursor:pointer;">← Helm</button>
       <button id="btn-install">Install App</button>
@@ -691,7 +691,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.9.9';
+const APP_VERSION = 'v3.10.0';
 document.getElementById('app-version').textContent = APP_VERSION;
 
 function esc(str) {
@@ -843,7 +843,7 @@ let helmUser = null;
 
 function applyHelmUser(user) {
   helmUser = user;
-  const isDriver = user.role_name && user.role_name.toLowerCase() === 'driver';
+  const isDriver = !(user.permitted_modules || []).includes('haul-admin');
   // Show back button whenever running inside Helm
   const backBtn = document.getElementById('btn-back-helm');
   if (backBtn) backBtn.style.display = 'block';
@@ -1114,15 +1114,15 @@ let cachedDriverNames = [];
 
 async function fetchDriverNames() {
   try {
-    // Get driver role ID
-    const roles = await sbFetch(HELM_URL, HELM_KEY, `roles?name=eq.driver&select=id`);
-    if (!roles || !roles.length) {
-      console.warn('No driver role found in Helm roles table');
-      return;
-    }
-    const driverRoleId = roles[0].id;
-    const users = await sbFetch(HELM_URL, HELM_KEY, `users?role_id=eq.${driverRoleId}&active=eq.true&select=name&order=name.asc`);
-    cachedDriverNames = (users || []).map(u => u.name).filter(Boolean);
+    // Query all active users directly — filter client-side to those with 'haul' but not 'haul-admin'
+    const users = await sbFetch(HELM_URL, HELM_KEY, `users?active=eq.true&select=name,permitted_modules&order=name.asc`);
+    cachedDriverNames = (users || [])
+      .filter(u => {
+        const mods = u.permitted_modules || [];
+        return mods.includes('haul') && !mods.includes('haul-admin');
+      })
+      .map(u => u.name)
+      .filter(Boolean);
     rebuildVanLabels();
   } catch(e) {
     console.warn('Could not load driver names:', e.message);
