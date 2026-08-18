@@ -1,4 +1,4 @@
-<!-- Haul v3.9.6 -->
+<!-- Haul v3.9.7 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -63,7 +63,7 @@
     .section-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
     .job-ref-tag { display:inline-block; margin-left:6px; font-size:11px; font-weight:700; padding:2px 7px; border-radius:4px; background:rgba(240,192,64,.15); color:var(--accent); border:1px solid rgba(240,192,64,.3); letter-spacing:.3px; vertical-align:middle; flex-shrink:0; white-space:nowrap; }
     .field-group { margin-bottom: 20px; }
-    .field-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+    .field-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
     input[type="text"], input[type="time"], input[type="number"], select {
       background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 15px; padding: 10px 12px; outline: none; width: 100%; transition: border-color 0.15s; font-family: var(--font);
     }
@@ -513,7 +513,7 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.9.6</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.9.7</span></div>
     <div style="display:flex;align-items:center;gap:10px;">
       <button id="btn-back-helm" onclick="window.parent.postMessage({type:'HAUL_NAV',action:'go-home'},'https://i3rink.github.io')" style="display:none;background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);font-size:13px;font-weight:600;padding:7px 12px;cursor:pointer;">← Helm</button>
       <button id="btn-install">Install App</button>
@@ -691,7 +691,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.9.6';
+const APP_VERSION = 'v3.9.7';
 document.getElementById('app-version').textContent = APP_VERSION;
 
 function esc(str) {
@@ -1015,16 +1015,16 @@ function addStop(postcode='', jobRef='', doorNumber='', notes='', source='') {
   const row = document.createElement('div');
   row.className = 'field-row';
   row.innerHTML = `
-    <input type="text" class="stop-postcode" placeholder="Postcode" value="${postcode}" autocomplete="off" spellcheck="false" style="flex:2;min-width:0;">
-    <input type="text" class="stop-door" placeholder="Door no." value="${doorNumber}" autocomplete="off" spellcheck="false" style="flex:1;min-width:0;font-size:13px;">
+    <input type="text" class="stop-postcode" placeholder="Postcode" value="${postcode}" autocomplete="off" spellcheck="false" style="flex:2;min-width:120px;">
+    <input type="text" class="stop-door" placeholder="Door no." value="${doorNumber}" autocomplete="off" spellcheck="false" style="flex:1;min-width:70px;font-size:13px;">
     <button class="btn-remove" title="Remove" tabindex="-1">×</button>
-    <div style="display:flex;gap:6px;width:100%;margin-top:4px;">
-      <select class="stop-source" style="flex:1;min-width:0;font-size:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:6px 8px;">
+    <div style="display:flex;gap:6px;flex:1 1 100%;min-width:0;">
+      <select class="stop-source" style="flex:0 0 130px;font-size:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:6px 8px;">
         <option value="install"${source === 'install' || source === '' ? ' selected' : ''}>Delivery</option>
         <option value="remedial"${source === 'remedial' ? ' selected' : ''}>Remedial</option>
         <option value="goods_out"${source === 'goods_out' ? ' selected' : ''}>Goods Out</option>
       </select>
-      <input type="text" class="stop-notes" placeholder="Driver note (e.g. collect 1500 bath)" value="${notes}" autocomplete="off" spellcheck="false" style="flex:3;min-width:0;font-size:12px;">
+      <input type="text" class="stop-notes" placeholder="Driver note (e.g. collect 1500 bath)" value="${notes}" autocomplete="off" spellcheck="false" style="flex:1;min-width:0;font-size:12px;">
     </div>
   `;
   // If a jobRef was passed in (e.g. loading a saved route), show it immediately
