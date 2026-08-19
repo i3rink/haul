@@ -1,4 +1,4 @@
-<!-- Haul v3.10.5 -->
+<!-- Haul v3.10.6 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -552,7 +552,7 @@
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.10.5</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.10.6</span></div>
     <div style="display:flex;align-items:center;gap:10px;">
       <button id="btn-back-helm" onclick="window.parent.postMessage({type:'HAUL_NAV',action:'go-home'},'https://i3rink.github.io')" style="display:none;background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);font-size:13px;font-weight:600;padding:7px 12px;cursor:pointer;">← Helm</button>
       <button id="btn-install">Install App</button>
@@ -730,7 +730,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.10.5';
+const APP_VERSION = 'v3.10.6';
 document.getElementById('app-version').textContent = APP_VERSION;
 
 function esc(str) {
@@ -1129,7 +1129,7 @@ function addStop(postcode='', jobRef='', doorNumber='', notes='', source='') {
   row.style.cssText = 'margin-bottom:0;';
   row.innerHTML = `
     <input type="text" class="stop-postcode" placeholder="Postcode" value="${postcode}" autocomplete="off" spellcheck="false" style="flex:2;min-width:120px;">
-    <input type="text" class="stop-door" placeholder="Door no." value="${doorNumber}" autocomplete="off" spellcheck="false" style="flex:1;min-width:70px;font-size:13px;">
+    <input type="text" class="stop-door" placeholder="e.g. 113 Ayr Rd" value="${doorNumber}" autocomplete="off" spellcheck="false" style="flex:1;min-width:70px;font-size:13px;" title="Enter house number and street name for accurate navigation">
     <button class="btn-remove" title="Remove" tabindex="-1">×</button>
     <div style="display:flex;gap:6px;flex:1 1 100%;min-width:0;">
       <select class="stop-source" style="flex:0 0 130px;font-size:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:6px 8px;">
