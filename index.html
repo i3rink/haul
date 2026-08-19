@@ -1,4 +1,4 @@
-<!-- Haul v3.10.0 -->
+<!-- Haul v3.10.1 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -44,6 +44,23 @@
     }
     .tab-btn { flex: 1; background: none; border: none; border-bottom: 3px solid transparent; color: var(--muted); font-size: 13px; font-weight: 600; padding: 13px 8px 10px; cursor: pointer; transition: color 0.15s, border-color 0.15s; white-space: nowrap; }
     .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    /* ── DRIVER PREVIEW ── */
+    #preview-banner { display:none; position:sticky; top:49px; z-index:99; background:#f59e0b; color:#1a1a1a; font-size:13px; font-weight:700; padding:8px 16px; display:none; align-items:center; justify-content:space-between; gap:10px; }
+    #preview-banner span { flex:1; }
+    #btn-exit-preview { background:#1a1a1a; color:#f59e0b; border:none; border-radius:6px; font-size:12px; font-weight:700; padding:5px 12px; cursor:pointer; white-space:nowrap; }
+    #btn-preview-driver { background:none; border:1px solid var(--border); border-radius:var(--radius); color:var(--muted); font-size:12px; font-weight:600; padding:6px 12px; cursor:pointer; white-space:nowrap; margin:6px 8px 6px auto; transition:border-color .15s,color .15s; }
+    #btn-preview-driver:hover { border-color:var(--accent); color:var(--accent); }
+    #preview-modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:500; align-items:center; justify-content:center; }
+    #preview-modal-overlay.open { display:flex; }
+    #preview-modal { background:var(--surface); border-radius:var(--radius); padding:24px; width:min(340px,90vw); }
+    #preview-modal h3 { font-size:16px; font-weight:800; margin:0 0 6px; color:var(--text); }
+    #preview-modal p { font-size:13px; color:var(--muted); margin:0 0 16px; }
+    #preview-driver-select { width:100%; margin-bottom:16px; }
+    .preview-modal-actions { display:flex; gap:8px; justify-content:flex-end; }
+    .preview-modal-actions button { border:none; border-radius:8px; font-size:13px; font-weight:700; padding:9px 18px; cursor:pointer; }
+    #btn-preview-cancel { background:var(--surface); border:1px solid var(--border) !important; color:var(--muted); }
+    #btn-preview-go { background:var(--accent); color:#0f0f1a; }
 
     /* ── PAGES ── */
     .page { display: none; max-width: 680px; margin: 0 auto; padding: 24px 16px 80px; }
@@ -508,12 +525,34 @@
   <button class="tab-btn active" data-tab="planner">Planner</button>
   <button class="tab-btn" data-tab="saved">Saved routes</button>
   <button class="tab-btn" data-tab="history">Mileage log</button>
+  <button id="btn-preview-driver" title="Preview the driver shift view as a specific driver">👁 Driver view</button>
+</div>
+
+<!-- ── DRIVER PREVIEW BANNER ── -->
+<div id="preview-banner">
+  <span id="preview-banner-label">Previewing driver view</span>
+  <button id="btn-exit-preview">Exit preview</button>
+</div>
+
+<!-- ── DRIVER PREVIEW MODAL ── -->
+<div id="preview-modal-overlay">
+  <div id="preview-modal">
+    <h3>Preview driver view</h3>
+    <p>Choose a driver to see exactly what they'd see on their shift.</p>
+    <select id="preview-driver-select">
+      <option value="">Select a driver…</option>
+    </select>
+    <div class="preview-modal-actions">
+      <button id="btn-preview-cancel">Cancel</button>
+      <button id="btn-preview-go">Preview</button>
+    </div>
+  </div>
 </div>
 
 <!-- ── DRIVER PAGE ── -->
 <div id="driver-page" class="page active">
   <header>
-    <div id="app-title"><span>Haul</span><span id="app-version">v3.10.0</span></div>
+    <div id="app-title"><span>Haul</span><span id="app-version">v3.10.1</span></div>
     <div style="display:flex;align-items:center;gap:10px;">
       <button id="btn-back-helm" onclick="window.parent.postMessage({type:'HAUL_NAV',action:'go-home'},'https://i3rink.github.io')" style="display:none;background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);font-size:13px;font-weight:600;padding:7px 12px;cursor:pointer;">← Helm</button>
       <button id="btn-install">Install App</button>
@@ -691,7 +730,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ── VERSION ──
-const APP_VERSION = 'v3.10.0';
+const APP_VERSION = 'v3.10.1';
 document.getElementById('app-version').textContent = APP_VERSION;
 
 function esc(str) {
@@ -874,6 +913,59 @@ window.addEventListener('message', e => {
   if (e.data && e.data.type === 'HELM_USER' && e.data.user) {
     applyHelmUser(e.data.user);
   }
+});
+
+// ── DRIVER PREVIEW ──
+let inDriverPreview = false;
+
+function openPreviewModal() {
+  const sel = document.getElementById('preview-driver-select');
+  sel.innerHTML = '<option value="">Select a driver…</option>' +
+    cachedDriverNames.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('');
+  document.getElementById('preview-modal-overlay').classList.add('open');
+}
+
+function closePreviewModal() {
+  document.getElementById('preview-modal-overlay').classList.remove('open');
+}
+
+function enterDriverPreview(driverName) {
+  if (!driverName) return;
+  inDriverPreview = true;
+  closePreviewModal();
+  // Hide planner tab bar, show preview banner
+  document.getElementById('tab-bar').style.display = 'none';
+  const banner = document.getElementById('preview-banner');
+  document.getElementById('preview-banner-label').textContent = `Previewing driver view — ${driverName}`;
+  banner.style.display = 'flex';
+  // Switch to driver shift view
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('driver-page').classList.add('active');
+  document.getElementById('driver-waiting').style.display = 'none';
+  document.getElementById('driver-shift').style.display = 'block';
+  document.getElementById('driver-greeting').textContent = `Hello, ${driverName.split(' ')[0]}.`;
+  document.getElementById('driver-date').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+  loadDriverShift(driverName);
+}
+
+function exitDriverPreview() {
+  inDriverPreview = false;
+  document.getElementById('preview-banner').style.display = 'none';
+  document.getElementById('driver-shift').style.display = 'none';
+  document.getElementById('tab-bar').style.display = 'flex';
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  showPage('planner');
+}
+
+document.getElementById('btn-preview-driver').addEventListener('click', openPreviewModal);
+document.getElementById('btn-preview-cancel').addEventListener('click', closePreviewModal);
+document.getElementById('btn-exit-preview').addEventListener('click', exitDriverPreview);
+document.getElementById('btn-preview-go').addEventListener('click', () => {
+  const sel = document.getElementById('preview-driver-select');
+  enterDriverPreview(sel.value);
+});
+document.getElementById('preview-modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('preview-modal-overlay')) closePreviewModal();
 });
 
 // ── DRIVER SHIFT — load active route from Helm by driver name ──
